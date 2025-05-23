@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
+import CustomProgressBar from '../components/CustomProgressBar';
 import { ProgressBar } from 'react-native-paper';
 
 export default function HomeScreen() {
@@ -7,129 +8,235 @@ export default function HomeScreen() {
         <ScrollView style={styles.container}>
             <View style={styles.header}>
                 <Image source={require('../assets/logo.png')} style={styles.logo} />
-                <Text style={styles.brand}>Haaze</Text>
+                <Text style={styles.brand}>HAAZE</Text>
             </View>
 
-            <View style={styles.userInfo}>
-                <Text style={styles.level}>Niveau 5 - JohnDoe</Text>
-                <ProgressBar progress={0.6} color="#3300FD" style={styles.progress} />
+            <Text style={styles.pseudo}>Mathieu</Text>
+
+            <View style={styles.userBlock}>
+                <Text style={styles.levelText}>Lv.1</Text>
+                <ProgressBar progress={0} color="#3300FD" style={styles.progressBar} />
+                <Text style={styles.levelText}>Lv.2</Text>
             </View>
 
-            <Image source={require('../assets/vetement-principal.png')} style={styles.mainImage} />
+            <View style={styles.tshirtContainer}>
+                <ImageBackground
+                    source={require('../assets/bg-vortex.png')}
+                    style={styles.tshirtWrapper}
+                    imageStyle={styles.vortexImage}
+                    resizeMode="cover"
+                >
+                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage} />
+                </ImageBackground>
+            </View>
 
-            <View style={styles.buttonsContainer}>
-                <TouchableOpacity style={styles.ctaPrimary}>
-                    <Text style={styles.ctaText}>Voir les skins</Text>
+            <View style={styles.tshirtLevelWrapper}>
+                <Text style={styles.itemLabel}>T-shirt HAAZE #1</Text>
+
+                <CustomProgressBar progress={0.6} />
+
+                <View style={styles.levelRow}>
+                    <Text style={styles.levelText}>Lv.1</Text>
+                    <Text style={styles.levelText}>Lv.2</Text>
+                </View>
+            </View>
+
+
+
+            {/* Boutons */}
+            <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.neonButtonBlue}>
+                    <Text style={styles.btnText}>Voir tous les skins</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.ctaSecondary}>
-                    <Text style={styles.ctaText}>Changer de vêtement</Text>
+                <TouchableOpacity style={styles.neonButtonBlue}>
+                    <Text style={styles.btnText}>Changer de vêtement</Text>
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.missionsContainer}>
-                <Text style={styles.sectionTitle}>Missions en cours</Text>
 
-                {[1, 2, 3].map((id) => (
-                    <View key={id} style={styles.missionItem}>
-                        <Text style={styles.missionTitle}>Mission {id} : Trouver le tag caché</Text>
-                        <Text style={styles.reward}>Récompense : 50 XP</Text>
-                        <ProgressBar progress={id * 0.2} color="#FF3600" style={styles.progress} />
-                    </View>
-                ))}
+            {/* Missions */}
+            <Text style={styles.sectionTitle}>MISSIONS EN COURS</Text>
+
+            <View style={styles.missionCard}>
+                <Text style={styles.missionTitle}>Je suis la mission 1</Text>
+                <View style={styles.missionRow}>
+                    <ProgressBar progress={0.5} color="#FF3600" style={styles.progressMission} />
+                    <Text style={styles.xp}>+350 XP</Text>
+                </View>
             </View>
+
+            <View style={styles.missionCard}>
+                <Text style={styles.missionTitle}>Je suis la mission 3</Text>
+                <View style={styles.missionRow}>
+                    <ProgressBar progress={0.5} color="#FF3600" style={styles.progressMission} />
+                    <Text style={styles.xp}>+350 XP</Text>
+                </View>
+            </View>
+
+            <TouchableOpacity style={styles.viewAllBtn}>
+                <Text style={styles.btnText}>Voir toutes les missions</Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: '#000000',
+        backgroundColor: '#000',
         padding: 20,
+        flex: 1,
     },
+
+    // LOGO ET TITRE CÔTE À CÔTE & CENTRÉS
     header: {
         flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 10,
     },
     logo: {
-        width: 40,
-        height: 40,
-        marginRight: 10,
+        width: 50,
+        height: 50,
+        marginRight: 8,
     },
     brand: {
-        color: '#FFFFFF',
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
+        color: '#FFF',
+        letterSpacing: 2,
     },
-    userInfo: {
+
+    pseudo: {
+        color: '#FFF',
+        fontSize: 18,
+        textAlign: 'left',
+        marginBottom: 6,
+    },
+    userBlock: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 14,
+    },
+    levelText: {
+        color: '#FFF',
+        fontSize: 14,
+    },
+    progressBar: {
+        flex: 1,
+        marginHorizontal: 10,
+        height: 10,
+        borderRadius: 10,
+        backgroundColor: '#111',
+    },
+    tshirtContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tshirtWrapper: {
+        width: 400,
+        height: 280,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    vortexImage: {
+        borderRadius: 140,
+        opacity: 0.6,
+    },
+    tshirtImage: {
+        width: 190,
+        height: 190,
+        resizeMode: 'contain',
+    },
+
+    // T-SHIRT LVL
+    tshirtLevelWrapper: {
         marginBottom: 20,
     },
-    level: {
-        color: '#FFFFFF',
-        fontSize: 18,
-        marginBottom: 4,
-    },
-    progress: {
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: '#222',
-    },
-    mainImage: {
-        width: '100%',
-        height: 300,
-        resizeMode: 'cover',
-        borderRadius: 10,
-        marginVertical: 20,
-    },
-    buttonsContainer: {
+
+    levelRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 30,
+        marginTop: 4,
     },
-    ctaPrimary: {
+
+    itemLabel: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        textAlign: 'left',
+    },
+
+    // Buttons
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginVertical: 20,
+    },
+
+    neonButtonBlue: {
         flex: 1,
-        backgroundColor: '#3300FD',
-        padding: 12,
-        borderRadius: 8,
-        marginRight: 10,
+        marginHorizontal: 5,
+        paddingVertical: 14,
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        borderColor: '#3300FD',
+        borderRadius: 0, // coins carrés
         alignItems: 'center',
+        shadowColor: '#3300FD',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.9,
+        shadowRadius: 10,
+        elevation: 10, // pour Android
     },
-    ctaSecondary: {
-        flex: 1,
-        backgroundColor: '#FF3600',
-        padding: 12,
-        borderRadius: 8,
-        marginLeft: 10,
-        alignItems: 'center',
-    },
-    ctaText: {
+
+    btnText: {
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    missionsContainer: {
-        marginBottom: 30,
-    },
     sectionTitle: {
-        color: '#FFFFFF',
-        fontSize: 20,
+        color: '#3300FD',
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
+        textAlign: 'center',
+        marginVertical: 10,
     },
-    missionItem: {
+    missionCard: {
         backgroundColor: '#111',
-        padding: 15,
-        borderRadius: 8,
+        borderColor: '#3300FD',
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
         marginBottom: 12,
     },
     missionTitle: {
         color: '#FFF',
         fontSize: 16,
-        marginBottom: 4,
+        marginBottom: 6,
     },
-    reward: {
+    missionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    progressMission: {
+        flex: 1,
+        marginRight: 10,
+        height: 8,
+        borderRadius: 8,
+        backgroundColor: '#222',
+    },
+    xp: {
         color: '#FF3600',
-        marginBottom: 4,
+        fontWeight: 'bold',
+    },
+    viewAllBtn: {
+        borderColor: '#FF3600',
+        borderWidth: 2,
+        padding: 12,
+        borderRadius: 10,
+        marginTop: 20,
     },
 });
