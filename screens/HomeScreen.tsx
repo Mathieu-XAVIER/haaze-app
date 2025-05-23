@@ -1,23 +1,27 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
-import CustomProgressBar from '../components/CustomProgressBar';
-import { ProgressBar } from 'react-native-paper';
+import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ImageBackground} from 'react-native';
+import CustomOrangeProgressBar from '../components/CustomOrangeProgressBar';
+import CustomBlueProgressBar from '../components/CustomBlueProgressBar';
+import MissionCard from '../components/MissionCard';
+import {useNavigation} from '@react-navigation/native';
 
 export default function HomeScreen() {
+    const navigation = useNavigation();
+
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Image source={require('../assets/logo.png')} style={styles.logo} />
+                <Image source={require('../assets/logo.png')} style={styles.logo}/>
                 <Text style={styles.brand}>HAAZE</Text>
             </View>
 
-            <Text style={styles.pseudo}>Mathieu</Text>
-
-            <View style={styles.userBlock}>
-                <Text style={styles.levelText}>Lv.1</Text>
-                <ProgressBar progress={0} color="#3300FD" style={styles.progressBar} />
-                <Text style={styles.levelText}>Lv.2</Text>
-            </View>
+            <CustomBlueProgressBar
+                progress={0.4}
+                pseudo="Mathieu"
+                level={1}
+                nextLevel={2}
+                xpText="800/2000xp"
+            />
 
             <View style={styles.tshirtContainer}>
                 <ImageBackground
@@ -26,22 +30,17 @@ export default function HomeScreen() {
                     imageStyle={styles.vortexImage}
                     resizeMode="cover"
                 >
-                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage} />
+                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage}/>
                 </ImageBackground>
             </View>
 
-            <View style={styles.tshirtLevelWrapper}>
-                <Text style={styles.itemLabel}>T-shirt HAAZE #1</Text>
-
-                <CustomProgressBar progress={0.6} />
-
-                <View style={styles.levelRow}>
-                    <Text style={styles.levelText}>Lv.1</Text>
-                    <Text style={styles.levelText}>Lv.2</Text>
-                </View>
-            </View>
-
-
+            <CustomOrangeProgressBar
+                progress={0.6}
+                title="T-shirt HAAZE"
+                level={3}
+                nextLevel={4}
+                xpText="3500/6000xp"
+            />
 
             {/* Boutons */}
             <View style={styles.buttonRow}>
@@ -53,29 +52,29 @@ export default function HomeScreen() {
                 </TouchableOpacity>
             </View>
 
-
             {/* Missions */}
-            <Text style={styles.sectionTitle}>MISSIONS EN COURS</Text>
+            <View style={styles.sectionWrapper}>
+                <ImageBackground
+                    source={require('../assets/bg-title-missions.png')}
+                    style={styles.missionTitleWrapper}
+                    imageStyle={styles.missionTitleImage}
+                    resizeMode="cover"
+                >
+                    <Text style={styles.missionTitleText}>MISSIONS EN COURS</Text>
+                </ImageBackground>
 
-            <View style={styles.missionCard}>
-                <Text style={styles.missionTitle}>Je suis la mission 1</Text>
-                <View style={styles.missionRow}>
-                    <ProgressBar progress={0.5} color="#FF3600" style={styles.progressMission} />
-                    <Text style={styles.xp}>+350 XP</Text>
-                </View>
+                <MissionCard title="Faire 2 pompes" progress={1} total={2} xp={350} />
+                <MissionCard title="Marcher 5000 pas" progress={3} total={5} xp={500} />
+                <MissionCard title="Jouer 3 parties" progress={2} total={3} xp={750} />
+
+                <TouchableOpacity
+                    style={styles.viewAllBtn}
+                    onPress={() => navigation.navigate('Missions')}
+                >
+                    <Text style={styles.btnText}>Voir toutes les missions</Text>
+                    <Text style={styles.btnPlus}>+</Text>
+                </TouchableOpacity>
             </View>
-
-            <View style={styles.missionCard}>
-                <Text style={styles.missionTitle}>Je suis la mission 3</Text>
-                <View style={styles.missionRow}>
-                    <ProgressBar progress={0.5} color="#FF3600" style={styles.progressMission} />
-                    <Text style={styles.xp}>+350 XP</Text>
-                </View>
-            </View>
-
-            <TouchableOpacity style={styles.viewAllBtn}>
-                <Text style={styles.btnText}>Voir toutes les missions</Text>
-            </TouchableOpacity>
         </ScrollView>
     );
 }
@@ -84,6 +83,7 @@ const styles = StyleSheet.create({
     container: {
         backgroundColor: '#000',
         padding: 20,
+        paddingTop: 50,
         flex: 1,
     },
 
@@ -106,33 +106,16 @@ const styles = StyleSheet.create({
         letterSpacing: 2,
     },
 
-    pseudo: {
-        color: '#FFF',
-        fontSize: 18,
-        textAlign: 'left',
-        marginBottom: 6,
-    },
-    userBlock: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 14,
-    },
     levelText: {
         color: '#FFF',
         fontSize: 14,
     },
-    progressBar: {
-        flex: 1,
-        marginHorizontal: 10,
-        height: 10,
-        borderRadius: 10,
-        backgroundColor: '#111',
-    },
+
     tshirtContainer: {
         alignItems: 'center',
         justifyContent: 'center',
     },
+
     tshirtWrapper: {
         width: 400,
         height: 280,
@@ -140,8 +123,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     vortexImage: {
-        borderRadius: 140,
-        opacity: 0.6,
+        opacity: 0.8,
     },
     tshirtImage: {
         width: 190,
@@ -182,61 +164,76 @@ const styles = StyleSheet.create({
         backgroundColor: 'transparent',
         borderWidth: 2,
         borderColor: '#3300FD',
-        borderRadius: 0, // coins carrés
+        borderRadius: 0,
         alignItems: 'center',
+        justifyContent: 'center',
         shadowColor: '#3300FD',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.9,
         shadowRadius: 10,
-        elevation: 10, // pour Android
+        elevation: 10,
     },
 
     btnText: {
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    sectionTitle: {
-        color: '#3300FD',
-        fontSize: 18,
-        fontWeight: 'bold',
         textAlign: 'center',
-        marginVertical: 10,
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
-    missionCard: {
-        backgroundColor: '#111',
-        borderColor: '#3300FD',
-        borderWidth: 1,
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 12,
-    },
-    missionTitle: {
-        color: '#FFF',
-        fontSize: 16,
-        marginBottom: 6,
-    },
-    missionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    progressMission: {
-        flex: 1,
-        marginRight: 10,
-        height: 8,
-        borderRadius: 8,
-        backgroundColor: '#222',
-    },
-    xp: {
-        color: '#FF3600',
+
+    sectionTitle: {
+        color: '#FFFFFF',
+        fontSize: 20,
         fontWeight: 'bold',
+        marginBottom: 10,
     },
+
+    // Missions
+    sectionWrapper: {
+        padding: 16,
+    },
+
+    missionTitleWrapper: {
+        width: '100%',
+        height: 60,
+        justifyContent: 'center',
+        paddingLeft: 20, // padding interne pour le texte
+        marginLeft: -40, // déborde à gauche
+        marginBottom: 20,
+    },
+
+    missionTitleImage: {
+        borderRadius: 20,
+        resizeMode: 'cover',
+        transform: [{scale: 1.5}],
+    },
+
+    missionTitleText: {
+        color: '#FFF',
+        fontSize: 22,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        letterSpacing: 2,
+    },
+
     viewAllBtn: {
-        borderColor: '#FF3600',
+        margin: 20,
         borderWidth: 2,
-        padding: 12,
-        borderRadius: 10,
-        marginTop: 20,
+        borderColor: '#3300FD',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#000',
+    },
+
+    btnPlus: {
+        color: '#FF3600',
+        fontSize: 22,
+        fontWeight: 'bold',
+        marginLeft: 10,
     },
 });
