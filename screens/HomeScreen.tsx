@@ -131,25 +131,6 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
 
-    // T-SHIRT LVL
-    tshirtLevelWrapper: {
-        marginBottom: 20,
-    },
-
-    levelRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 4,
-    },
-
-    itemLabel: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        textAlign: 'left',
-    },
-
     // Buttons
     buttonRow: {
         flexDirection: 'row',
@@ -173,7 +154,6 @@ const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 10,
     },
-
     btnText: {
         color: '#FFF',
         fontSize: 16,
@@ -212,7 +192,7 @@ const styles = StyleSheet.create({
 
     missionTitleText: {
         color: '#FFF',
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'left',
         letterSpacing: 2,
