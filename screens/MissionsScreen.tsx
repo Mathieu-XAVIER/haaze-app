@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpa
 import CustomBlueProgressBar from "../components/CustomBlueProgressBar";
 import MissionCard from "../components/MissionCard";
 import CustomOrangeProgressBar from "../components/CustomOrangeProgressBar";
+import SectionTitle from "../components/SectionTitle";
 
 export default function MissionsScreen() {
     return (
@@ -26,12 +27,12 @@ export default function MissionsScreen() {
                     imageStyle={styles.missionTitleImage}
                     resizeMode="cover"
                 >
-                    <Text style={styles.missionTitleText}>MISSIONS EN COURS</Text>
+                    <SectionTitle title="MISSIONS EN COURS"/>
                 </ImageBackground>
 
-                <MissionCard title="Faire 2 pompes" progress={1} total={2} xp={350} />
-                <MissionCard title="Marcher 5000 pas" progress={3} total={5} xp={500} />
-                <MissionCard title="Jouer 3 parties" progress={2} total={3} xp={750} />
+                <MissionCard title="Faire 2 pompes" progress={1} total={2} xp={350}/>
+                <MissionCard title="Marcher 5000 pas" progress={3} total={5} xp={500}/>
+                <MissionCard title="Jouer 3 parties" progress={2} total={3} xp={750}/>
 
                 <TouchableOpacity
                     style={styles.viewAllBtn}>
@@ -66,7 +67,7 @@ export default function MissionsScreen() {
                     imageStyle={styles.missionTitleImage}
                     resizeMode="cover"
                 >
-                    <Text style={styles.missionTitleText}>Missions de ce vêtement</Text>
+                    <SectionTitle title="Missions de ce vêtement"/>
                 </ImageBackground>
 
                 {/* Filtres */}
@@ -78,9 +79,9 @@ export default function MissionsScreen() {
                 </View>
 
                 {/* Liste de missions */}
-                <MissionCard title="Faire 2 pompes" progress={0} total={2} xp={350} />
-                <MissionCard title="Marcher 5000 pas" progress={0} total={5} xp={500} />
-                <MissionCard title="Jouer 3 parties" progress={0} total={3} xp={750} />
+                <MissionCard title="Faire 2 pompes" progress={0} total={2} xp={350}/>
+                <MissionCard title="Marcher 5000 pas" progress={0} total={5} xp={500}/>
+                <MissionCard title="Jouer 3 parties" progress={0} total={3} xp={750}/>
 
                 <TouchableOpacity
                     style={styles.viewAllBtn}>
@@ -129,14 +130,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         resizeMode: 'cover',
         transform: [{scale: 1.5}],
-    },
-
-    missionTitleText: {
-        color: '#FFF',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        letterSpacing: 2,
     },
 
     viewAllBtn: {

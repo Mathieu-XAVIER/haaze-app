@@ -3,6 +3,7 @@ import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ImageBackgr
 import CustomOrangeProgressBar from '../components/CustomOrangeProgressBar';
 import CustomBlueProgressBar from '../components/CustomBlueProgressBar';
 import MissionCard from '../components/MissionCard';
+import SectionTitle from '../components/SectionTitle';
 import {useNavigation} from '@react-navigation/native';
 
 export default function HomeScreen() {
@@ -60,7 +61,7 @@ export default function HomeScreen() {
                     imageStyle={styles.missionTitleImage}
                     resizeMode="cover"
                 >
-                    <Text style={styles.missionTitleText}>MISSIONS EN COURS</Text>
+                    <SectionTitle title="MISSIONS EN COURS"/>
                 </ImageBackground>
 
                 <MissionCard title="Faire 2 pompes" progress={1} total={2} xp={350} />
@@ -163,13 +164,6 @@ const styles = StyleSheet.create({
         textAlignVertical: 'center',
     },
 
-    sectionTitle: {
-        color: '#FFFFFF',
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 10,
-    },
-
     // Missions
     sectionWrapper: {
         padding: 16,
@@ -179,8 +173,8 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 60,
         justifyContent: 'center',
-        paddingLeft: 20, // padding interne pour le texte
-        marginLeft: -40, // déborde à gauche
+        paddingLeft: 20,
+        marginLeft: -40, 
         marginBottom: 20,
     },
 
