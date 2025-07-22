@@ -15,9 +15,14 @@ export default function BottomTabs() {
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
-                tabBarStyle: { backgroundColor: '#000000' },
+                tabBarStyle: { backgroundColor: '#000000', borderTopWidth: 0 },
                 tabBarActiveTintColor: '#3300FD',
-                tabBarInactiveTintColor: '#FFF',
+                tabBarInactiveTintColor: '#FF3600',
+                tabBarLabelStyle: {
+                    fontFamily: 'Minasans',
+                    fontWeight: 'bold',
+                    fontSize: 13,
+                },
                 tabBarIcon: ({ color, size }) => {
                     const icons: any = {
                         Home: 'home',

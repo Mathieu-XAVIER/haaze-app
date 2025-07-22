@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpacity} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import CustomBlueProgressBar from "../components/CustomBlueProgressBar";
 import MissionCard from "../components/MissionCard";
 import CustomOrangeProgressBar from "../components/CustomOrangeProgressBar";
 import SectionTitle from "../components/SectionTitle";
 import { getMissions, Mission } from '../services/api';
+import NeonButton from '../components/NeonButton';
+import NeonProgressBar from '../components/NeonProgressBar';
 
 export default function MissionsScreen() {
     const [missions, setMissions] = useState<Mission[]>([]);
@@ -16,13 +19,14 @@ export default function MissionsScreen() {
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Image source={require('../assets/logo.png')} style={styles.logo}/>
-                <CustomBlueProgressBar
+                <Image source={require('../assets/logo.png')} style={styles.logo} />
+                <NeonProgressBar
                     progress={0.4}
                     pseudo="Mathieu"
                     level={1}
                     nextLevel={2}
                     xpText="800/2000xp"
+                    color="blue"
                     compact={true}
                 />
             </View>
@@ -48,11 +52,9 @@ export default function MissionsScreen() {
                     />
                 ))}
 
-                <TouchableOpacity
-                    style={styles.viewAllBtn}>
-                    <Text style={styles.btnText}>Voir toutes les missions</Text>
-                    <Text style={styles.btnPlus}>+</Text>
-                </TouchableOpacity>
+                <NeonButton color="blue" onPress={() => {}} style={{marginTop: 16}}>
+                    Voir toutes les missions
+                </NeonButton>
             </View>
 
             <View style={styles.tshirtContainer}>
@@ -62,15 +64,16 @@ export default function MissionsScreen() {
                     imageStyle={styles.vortexImage}
                     resizeMode="cover"
                 >
-                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage}/>
+                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage} resizeMode="contain" />
                 </ImageBackground>
 
-                <CustomOrangeProgressBar
+                <NeonProgressBar
                     progress={0.6}
                     title="T-shirt HAAZE"
                     level={3}
                     nextLevel={4}
                     xpText="3500/6000xp"
+                    color="orange"
                 />
             </View>
 
@@ -97,11 +100,9 @@ export default function MissionsScreen() {
                 <MissionCard title="Marcher 5000 pas" progress={0} total={5} xp={500}/>
                 <MissionCard title="Jouer 3 parties" progress={0} total={3} xp={750}/>
 
-                <TouchableOpacity
-                    style={styles.viewAllBtn}>
-                    <Text style={styles.btnText}>Voir toutes les missions</Text>
-                    <Text style={styles.btnPlus}>+</Text>
-                </TouchableOpacity>
+                <NeonButton color="blue" onPress={() => {}} style={{marginTop: 16}}>
+                    Voir toutes les missions
+                </NeonButton>
             </View>
         </ScrollView>
     );
@@ -114,7 +115,6 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         flex: 1,
     },
-
     header: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -126,59 +126,62 @@ const styles = StyleSheet.create({
         height: 50,
         marginRight: 8,
     },
-
     sectionWrapper: {
         padding: 16,
     },
-
     missionTitleWrapper: {
         width: '100%',
         height: 60,
         justifyContent: 'center',
-        paddingLeft: 20, // padding interne pour le texte
-        marginLeft: -40, // déborde à gauche
+        paddingLeft: 20,
+        marginLeft: -40,
         marginBottom: 20,
     },
-
     missionTitleImage: {
         borderRadius: 20,
         resizeMode: 'cover',
         transform: [{scale: 1.5}],
     },
-
-    viewAllBtn: {
-        margin: 20,
-        borderWidth: 2,
-        borderColor: '#3300FD',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    neonButtonBlue: {
+        flex: 1,
+        marginHorizontal: 5,
+        paddingVertical: 0,
+        borderRadius: 12,
         alignItems: 'center',
-        backgroundColor: '#000',
+        justifyContent: 'center',
+        shadowColor: '#3300FD',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.9,
+        shadowRadius: 16,
+        elevation: 10,
+        overflow: 'hidden',
+        marginTop: 16,
     },
-
     btnText: {
-        color: '#FFF',
+        color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
-        includeFontPadding: false,
-        textAlignVertical: 'center',
+        fontFamily: 'Helvetica',
+        letterSpacing: 1.2,
+        textShadowColor: '#3300FD',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
+        paddingVertical: 14,
     },
-
     btnPlus: {
         color: '#FF3600',
         fontSize: 22,
         fontWeight: 'bold',
         marginLeft: 10,
+        textShadowColor: '#FF3600',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
     },
-
     tshirtContainer: {
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     tshirtWrapper: {
         width: 400,
         height: 280,
@@ -193,7 +196,6 @@ const styles = StyleSheet.create({
         height: 190,
         resizeMode: 'contain',
     },
-
     filterContainer: {
         flexDirection: 'row',
         alignItems: 'center',

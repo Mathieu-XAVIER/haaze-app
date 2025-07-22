@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import NeonButton from '../components/NeonButton';
 
 // Mock de la fonction de connexion
 const mockLogin = (email: string, password: string) => {
@@ -16,7 +17,6 @@ const LoginScreen = ({ navigation, onLogin }: any) => {
     if (mockLogin(email, password)) {
       setError('');
       if (onLogin) onLogin();
-      // navigation.replace('Home'); // On laisse la navigation gérée par App.tsx
     } else {
       setError('Identifiants incorrects');
     }
@@ -46,9 +46,9 @@ const LoginScreen = ({ navigation, onLogin }: any) => {
         secureTextEntry
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Se connecter</Text>
-      </TouchableOpacity>
+      <NeonButton color="blue" onPress={handleLogin} style={{width: '100%', marginTop: 16}}>
+        Se connecter
+      </NeonButton>
     </KeyboardAvoidingView>
   );
 };
@@ -56,17 +56,19 @@ const LoginScreen = ({ navigation, onLogin }: any) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0A0A', // fond noir
+    backgroundColor: '#0A0A0A',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
   title: {
     fontSize: 32,
-    color: '#6EE7FF', // bleu néon
+    color: '#3300FD',
     fontWeight: 'bold',
     marginBottom: 32,
     letterSpacing: 2,
+    fontFamily: 'Minasans',
+    // Aucun effet de néon
   },
   input: {
     width: '100%',
@@ -76,34 +78,48 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     color: '#fff',
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#6EE7FF',
+    borderWidth: 2,
+    borderColor: '#3300FD',
     fontSize: 16,
+    fontFamily: 'Helvetica',
+    shadowColor: '#3300FD',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 8,
+    elevation: 4,
   },
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#6EE7FF',
+    backgroundColor: '#3300FD',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 16,
-    shadowColor: '#6EE7FF',
+    shadowColor: '#3300FD',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 10,
     elevation: 5,
   },
   buttonText: {
-    color: '#0A0A0A',
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 18,
     letterSpacing: 1,
+    fontFamily: 'Minasans',
+    textShadowColor: '#6EE7FF',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   error: {
-    color: '#FF6E6E',
+    color: '#FF3600',
     marginBottom: 8,
     fontWeight: 'bold',
+    fontFamily: 'Helvetica',
+    textShadowColor: '#FF3600',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
   },
 });
 
