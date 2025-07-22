@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpacity} from 'react-native';
 import CustomBlueProgressBar from "../components/CustomBlueProgressBar";
 import MissionCard from "../components/MissionCard";
 import CustomOrangeProgressBar from "../components/CustomOrangeProgressBar";
 import SectionTitle from "../components/SectionTitle";
+import { getMissions, Mission } from '../services/api';
 
 export default function MissionsScreen() {
+    const [missions, setMissions] = useState<Mission[]>([]);
+
+    useEffect(() => {
+        getMissions().then(setMissions);
+    }, []);
+
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
@@ -30,9 +37,16 @@ export default function MissionsScreen() {
                     <SectionTitle title="MISSIONS EN COURS"/>
                 </ImageBackground>
 
-                <MissionCard title="Faire 2 pompes" progress={1} total={2} xp={350}/>
-                <MissionCard title="Marcher 5000 pas" progress={3} total={5} xp={500}/>
-                <MissionCard title="Jouer 3 parties" progress={2} total={3} xp={750}/>
+                {/* Affichage dynamique des missions mockées */}
+                {missions.map(mission => (
+                    <MissionCard
+                        key={mission.id}
+                        title={mission.titre}
+                        progress={mission.terminee ? 1 : 0}
+                        total={1}
+                        xp={mission.type === 'scan' ? 350 : mission.type === 'ra' ? 500 : 750}
+                    />
+                ))}
 
                 <TouchableOpacity
                     style={styles.viewAllBtn}>

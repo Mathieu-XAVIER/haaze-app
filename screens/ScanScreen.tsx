@@ -1,7 +1,30 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, Platform } from 'react-native';
+import NfcManager, { NfcTech } from 'react-native-nfc-manager';
 
 export default function ScanScreen() {
+    const [nfcId, setNfcId] = useState<string | null>(null);
+    const [scanning, setScanning] = useState(false);
+
+    const scanNfc = async () => {
+        setScanning(true);
+        try {
+            await NfcManager.start();
+            await NfcManager.requestTechnology(NfcTech.Ndef);
+            const tag = await NfcManager.getTag();
+            setNfcId(tag?.id || 'Inconnu');
+            await NfcManager.cancelTechnologyRequest();
+        } catch (ex) {
+            if (Platform.OS === 'ios' && ex === 'cancelled') {
+                // L'utilisateur a annulé le scan
+            } else {
+                Alert.alert('Erreur', 'Impossible de scanner la puce NFC.');
+            }
+        } finally {
+            setScanning(false);
+        }
+    };
+
     return (
         <View style={styles.container}>
             <Image source={require('../assets/nfc-icon.png')} style={styles.icon} />
@@ -10,9 +33,16 @@ export default function ScanScreen() {
                 Approche ton téléphone de la puce NFC de ton vêtement pour l'activer.
             </Text>
 
-            <TouchableOpacity style={styles.scanButton}>
-                <Text style={styles.scanText}>Scanner maintenant</Text>
+            <TouchableOpacity style={styles.scanButton} onPress={scanNfc} disabled={scanning}>
+                <Text style={styles.scanText}>{scanning ? 'Scan en cours...' : 'Scanner maintenant'}</Text>
             </TouchableOpacity>
+
+            {nfcId && (
+                <View style={styles.resultContainer}>
+                    <Text style={styles.resultLabel}>ID de la puce détectée :</Text>
+                    <Text style={styles.resultValue}>{nfcId}</Text>
+                </View>
+            )}
         </View>
     );
 }
@@ -36,7 +66,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: '#6EE7FF', // bleu néon
         marginBottom: 12,
         textAlign: 'center',
         letterSpacing: 1.5,
@@ -68,5 +98,21 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+
+    resultContainer: {
+        marginTop: 32,
+        alignItems: 'center',
+    },
+    resultLabel: {
+        color: '#6EE7FF',
+        fontSize: 14,
+        marginBottom: 4,
+    },
+    resultValue: {
+        color: '#FFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+        letterSpacing: 1.2,
     },
 });
