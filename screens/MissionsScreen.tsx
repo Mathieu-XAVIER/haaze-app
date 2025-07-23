@@ -96,7 +96,7 @@ export default function MissionsScreen() {
                 </View>
 
                 {/* Liste de missions */}
-                <MissionCard title="Faire 2 pompes" progress={0} total={2} xp={350}/>
+                <MissionCard title="Faire 2 pompes" progress={0} total={2} xp={350} terminee/>
                 <MissionCard title="Marcher 5000 pas" progress={0} total={5} xp={500}/>
                 <MissionCard title="Jouer 3 parties" progress={0} total={3} xp={750}/>
 
