@@ -37,7 +37,7 @@ export default function BottomTabs() {
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Missions" component={MissionsScreen} />
-            <Tab.Screen name="Scan" component={ScanScreen} />
+            {/*<Tab.Screen name="Scan" component={ScanScreen} />*/}
             <Tab.Screen name="Collection" component={CollectionScreen} />
             <Tab.Screen name="Profil" component={ProfileScreen} />
         </Tab.Navigator>
