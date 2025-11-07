@@ -1,110 +1,153 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { getUser, User, Vetement } from '../services/api';
+import React, {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
+import {getUser, logout, User} from '../services/api';
 import NeonCard from '../components/NeonCard';
 
-export default function ProfileScreen() {
+export default function ProfileScreen({onLogout}: { onLogout: () => void }) {
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
         getUser().then(setUser);
     }, []);
 
+    const handleLogout = async () => {
+        await logout();
+        onLogout();
+    };
+
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Mon Profil</Text>
-            {user && (
-                <>
-                    <Text style={styles.info}>Nom : <Text style={styles.value}>{user.name}</Text></Text>
-                    <Text style={styles.info}>Email : <Text style={styles.value}>{user.email}</Text></Text>
-                    <Text style={styles.sectionTitle}>Mes vêtements</Text>
-                    <FlatList
-                        data={user.vetements}
-                        keyExtractor={item => item.id}
-                        renderItem={({ item }) => (
-                            <NeonCard color="blue">
-                                <Text style={styles.vetementName}>{item.nom}</Text>
-                                <Text style={styles.vetementId}>NFC : {item.nfcId}</Text>
-                                <Text style={styles.vetementCmd}>Commande : {item.numeroCommande}</Text>
-                            </NeonCard>
-                        )}
-                        ListEmptyComponent={<Text style={styles.empty}>Aucun vêtement associé</Text>}
-                    />
-                </>
-            )}
+            <View style={styles.header}>
+                <Text style={styles.logo}>H</Text>
+                <Text style={styles.username}>{user?.name || 'Je suis le pseudo'}</Text>
+            </View>
+
+            <View style={styles.tshirtContainer}>
+                <Text style={styles.tshirtName}>T-shirt HAAZE #1</Text>
+                <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, {width: '40%'}]}/>
+                </View>
+                <Text style={styles.level}>Lv.1</Text>
+            </View>
+
+            <View style={styles.buttonRow}>
+                <TouchableOpacity style={styles.button}>
+                    <Text style={styles.buttonText}>Voir tous les skins</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.button}>
+                    <Text style={styles.buttonText}>Changer de vêtements</Text>
+                </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>MISSIONS EN COURS</Text>
+            <FlatList
+                data={[1, 2, 3]}
+                keyExtractor={(item) => item.toString()}
+                renderItem={({item}) => (
+                    <View style={styles.missionCard}>
+                        <Text style={styles.missionText}>Je suis la mission {item} +350 XP</Text>
+                        <View style={styles.missionBar}>
+                            <View style={[styles.missionFill, {width: '50%'}]}/>
+                        </View>
+                    </View>
+                )}
+            />
+
+            <TouchableOpacity style={styles.missionButton}>
+                <Text style={styles.missionButtonText}>Voir toutes les missions</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Collections à venir</Text>
+            <FlatList
+                horizontal
+                data={[
+                    {id: '1', label: 'HAAZE X OL'},
+                    {id: '2', label: 'HAAZE X FOREVER VACATION'},
+                ]}
+                renderItem={({item}) => (
+                    <View style={styles.collectionCard}>
+                        <Text style={styles.collectionText}>{item.label}</Text>
+                    </View>
+                )}
+                keyExtractor={(item) => item.id}
+            />
+
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Text style={styles.logoutText}>Se déconnecter</Text>
+            </TouchableOpacity>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#0A0A0A',
+    container: {flex: 1, backgroundColor: '#fff', padding: 20},
+    header: {flexDirection: 'row', alignItems: 'center', marginBottom: 20},
+    logo: {fontSize: 40, fontWeight: 'bold', marginRight: 10},
+    username: {fontSize: 18, fontWeight: '500'},
+    tshirtContainer: {marginBottom: 20},
+    tshirtName: {fontSize: 16, marginBottom: 6},
+    progressBar: {
+        height: 8,
+        backgroundColor: '#eee',
+        borderRadius: 4,
+        overflow: 'hidden',
     },
-    title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#3300FD',
-        marginBottom: 18,
-        letterSpacing: 1.5,
-        fontFamily: 'Minasans',
-        // Aucun effet de néon
+    progressFill: {
+        height: 8,
+        backgroundColor: '#3300FD',
     },
-    info: {
-        color: '#FFF',
-        fontSize: 16,
-        marginBottom: 4,
-        fontFamily: 'Helvetica',
-    },
-    value: {
-        color: '#6EE7FF',
-        fontWeight: 'bold',
-        fontFamily: 'Helvetica',
-    },
-    sectionTitle: {
-        color: '#FF3600',
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginTop: 24,
-        marginBottom: 10,
-        letterSpacing: 1.2,
-        fontFamily: 'Minasans',
-    },
-    vetementCard: {
-        backgroundColor: '#18181B',
+    level: {fontSize: 12, color: '#555', marginTop: 4},
+    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', marginVertical: 16},
+    button: {
+        backgroundColor: '#000',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
         borderRadius: 10,
+    },
+    buttonText: {color: '#fff', fontWeight: 'bold'},
+    sectionTitle: {fontSize: 18, fontWeight: 'bold', color: '#3300FD', marginVertical: 12},
+    missionCard: {
+        backgroundColor: '#3300FD',
         padding: 14,
-        marginBottom: 12,
-        borderWidth: 2,
-        borderColor: '#3300FD',
-        shadowColor: '#3300FD',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 10,
-        elevation: 6,
+        borderRadius: 10,
+        marginBottom: 10,
     },
-    vetementName: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 2,
-        fontFamily: 'Helvetica',
+    missionText: {color: '#fff', marginBottom: 4},
+    missionBar: {
+        height: 6,
+        backgroundColor: '#fff',
+        borderRadius: 3,
+        overflow: 'hidden',
     },
-    vetementId: {
-        color: '#AAA',
-        fontSize: 13,
-        fontFamily: 'Helvetica',
-    },
-    vetementCmd: {
-        color: '#6EE7FF',
-        fontSize: 13,
-        marginTop: 2,
-        fontFamily: 'Helvetica',
-    },
-    empty: {
-        color: '#AAA',
-        fontStyle: 'italic',
+    missionFill: {height: 6, backgroundColor: '#000'},
+    missionButton: {
         marginTop: 10,
+        alignSelf: 'center',
+        backgroundColor: '#fff',
+        padding: 10,
     },
+    missionButtonText: {
+        color: '#3300FD',
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    collectionCard: {
+        backgroundColor: '#000',
+        borderRadius: 12,
+        marginRight: 10,
+        padding: 20,
+        width: 160,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    collectionText: {color: '#fff', textAlign: 'center', fontWeight: 'bold'},
+    logoutButton: {
+        marginTop: 30,
+        alignSelf: 'center',
+        backgroundColor: '#FF3600',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+    },
+    logoutText: {color: '#fff', fontWeight: 'bold'},
 });

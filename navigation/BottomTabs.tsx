@@ -10,7 +10,11 @@ import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-export default function BottomTabs() {
+type Props = {
+    onLogout: () => void;
+};
+
+export default function BottomTabs({ onLogout }: Props) {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -39,7 +43,9 @@ export default function BottomTabs() {
             <Tab.Screen name="Missions" component={MissionsScreen} />
             {/*<Tab.Screen name="Scan" component={ScanScreen} />*/}
             <Tab.Screen name="Collection" component={CollectionScreen} />
-            <Tab.Screen name="Profil" component={ProfileScreen} />
+            <Tab.Screen name="Profil">
+                {props => <ProfileScreen {...props} onLogout={onLogout} />}
+            </Tab.Screen>
         </Tab.Navigator>
     );
 }
