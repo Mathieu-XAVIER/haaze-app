@@ -1,10 +1,13 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ImageBackground} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import CustomOrangeProgressBar from '../components/CustomOrangeProgressBar';
 import CustomBlueProgressBar from '../components/CustomBlueProgressBar';
 import MissionCard from '../components/MissionCard';
 import SectionTitle from '../components/SectionTitle';
 import {useNavigation} from '@react-navigation/native';
+import NeonButton from '../components/NeonButton';
+import NeonProgressBar from '../components/NeonProgressBar';
 
 export default function HomeScreen() {
     const navigation = useNavigation();
@@ -12,16 +15,17 @@ export default function HomeScreen() {
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Image source={require('../assets/logo.png')} style={styles.logo}/>
+                <Image source={require('../assets/logo.png')} style={styles.logo} />
                 <Text style={styles.brand}>HAAZE</Text>
             </View>
 
-            <CustomBlueProgressBar
+            <NeonProgressBar
                 progress={0.4}
                 pseudo="Mathieu"
                 level={1}
                 nextLevel={2}
                 xpText="800/2000xp"
+                color="blue"
             />
 
             <View style={styles.tshirtContainer}>
@@ -31,26 +35,27 @@ export default function HomeScreen() {
                     imageStyle={styles.vortexImage}
                     resizeMode="cover"
                 >
-                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage}/>
+                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage} resizeMode="contain" />
                 </ImageBackground>
             </View>
 
-            <CustomOrangeProgressBar
+            <NeonProgressBar
                 progress={0.6}
                 title="T-shirt HAAZE"
                 level={3}
                 nextLevel={4}
                 xpText="3500/6000xp"
+                color="orange"
             />
 
-            {/* Boutons */}
+            {/* Boutons avec NeonButton */}
             <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.neonButtonBlue}>
-                    <Text style={styles.btnText}>Voir tous les skins</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.neonButtonBlue}>
-                    <Text style={styles.btnText}>Changer de vêtement</Text>
-                </TouchableOpacity>
+                <NeonButton color="blue" onPress={() => {}}>
+                    Voir tous les skins
+                </NeonButton>
+                <NeonButton color="blue" onPress={() => {}}>
+                    Changer de vêtement
+                </NeonButton>
             </View>
 
             {/* Missions */}
@@ -87,8 +92,6 @@ const styles = StyleSheet.create({
         paddingTop: 50,
         flex: 1,
     },
-
-    // LOGO ET TITRE CÔTE À CÔTE & CENTRÉS
     header: {
         flexDirection: 'row',
         justifyContent: 'center',
@@ -101,22 +104,17 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     brand: {
-        fontSize: 26,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: '#3300FD',
         letterSpacing: 2,
+        fontFamily: 'Minasans',
+        // Aucun effet de néon
     },
-
-    levelText: {
-        color: '#FFF',
-        fontSize: 14,
-    },
-
     tshirtContainer: {
         alignItems: 'center',
         justifyContent: 'center',
     },
-
     tshirtWrapper: {
         width: 400,
         height: 280,
@@ -131,67 +129,53 @@ const styles = StyleSheet.create({
         height: 190,
         resizeMode: 'contain',
     },
-
-    // Buttons
     buttonRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginVertical: 20,
     },
-
     neonButtonBlue: {
         flex: 1,
         marginHorizontal: 5,
-        paddingVertical: 14,
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderColor: '#3300FD',
-        borderRadius: 0,
+        paddingVertical: 0,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: '#3300FD',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.9,
-        shadowRadius: 10,
+        shadowRadius: 16,
         elevation: 10,
+        overflow: 'hidden',
     },
     btnText: {
-        color: '#FFF',
+        color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
-        includeFontPadding: false,
-        textAlignVertical: 'center',
+        fontFamily: 'Helvetica',
+        letterSpacing: 1.2,
+        textShadowColor: '#3300FD',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
+        paddingVertical: 14,
     },
-
-    // Missions
     sectionWrapper: {
         padding: 16,
     },
-
     missionTitleWrapper: {
         width: '100%',
         height: 60,
         justifyContent: 'center',
         paddingLeft: 20,
-        marginLeft: -40, 
+        marginLeft: -40,
         marginBottom: 20,
     },
-
     missionTitleImage: {
         borderRadius: 20,
         resizeMode: 'cover',
         transform: [{scale: 1.5}],
     },
-
-    missionTitleText: {
-        color: '#FFF',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'left',
-        letterSpacing: 2,
-    },
-
     viewAllBtn: {
         margin: 20,
         borderWidth: 2,
@@ -202,12 +186,20 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         backgroundColor: '#000',
+        borderRadius: 12,
+        shadowColor: '#3300FD',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 10,
+        elevation: 8,
     },
-
     btnPlus: {
         color: '#FF3600',
         fontSize: 22,
         fontWeight: 'bold',
         marginLeft: 10,
+        textShadowColor: '#FF3600',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
     },
 });
