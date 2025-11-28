@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ImageBackground, StyleSheet } from 'react-native';
+import { COLORS, FONTS } from '../styles/theme';
 
 type Props = {
     title: string;
@@ -13,7 +14,10 @@ export default function SectionTitle({ title }: Props) {
             imageStyle={styles.image}
             resizeMode="cover"
         >
-            <Text style={styles.text}>{title}</Text>
+            <View>
+                <Text style={styles.text}>{title}</Text>
+                <View style={styles.underline} />
+            </View>
         </ImageBackground>
     );
 }
@@ -35,8 +39,15 @@ const styles = StyleSheet.create({
     text: {
         color: '#FFF',
         fontSize: 20,
-        fontWeight: 'bold',
+        fontFamily: FONTS.title,
         textAlign: 'left',
         letterSpacing: 2,
+    },
+    underline: {
+        width: 60,
+        height: 6,
+        borderRadius: 10,
+        backgroundColor: COLORS.accentYellow,
+        marginTop: 4,
     },
 });

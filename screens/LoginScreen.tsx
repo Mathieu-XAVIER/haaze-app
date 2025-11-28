@@ -33,8 +33,14 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
 
             onLogin(); // bascule vers Main
         } catch (error: any) {
-            console.error(error?.response?.data || error);
-            Alert.alert('Erreur de connexion', 'Email ou mot de passe invalide');
+            console.error('[Login]', error?.response?.data || error);
+            const apiMessage =
+                error?.response?.data?.message ||
+                error?.response?.data?.error ||
+                (error?.message === 'Network Error'
+                    ? "Serveur injoignable. Vérifie l'URL de ton API Laravel."
+                    : null);
+            Alert.alert('Erreur de connexion', apiMessage || 'Email ou mot de passe invalide');
         } finally {
             setLoading(false);
         }

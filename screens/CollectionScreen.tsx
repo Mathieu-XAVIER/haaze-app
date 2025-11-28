@@ -1,141 +1,224 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { getUser, Skin, Vetement } from '../services/api';
-import NeonButton from '../components/NeonButton';
-import NeonCard from '../components/NeonCard';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, ImageBackground } from 'react-native';
+import { getUser, Vetement } from '../services/api';
+import { COLORS, FONTS } from '../styles/theme';
+
+type ComingCollection = {
+    id: string;
+    title: string;
+    subtitle: string;
+    image: any;
+};
+
+const comingCollections: ComingCollection[] = [
+    { id: 'ol', title: 'HAAZE X OL', subtitle: 'COLLECTIONS À VENIR', image: require('../assets/badge-1.png') },
+    {
+        id: 'forever',
+        title: 'HAAZE X FOREVER VACATION',
+        subtitle: 'COLLECTIONS À VENIR',
+        image: require('../assets/badge-2.png'),
+    },
+];
 
 export default function CollectionScreen() {
     const [vetements, setVetements] = useState<Vetement[]>([]);
-    const [skins, setSkins] = useState<Skin[]>([]);
 
     useEffect(() => {
-        getUser().then(user => {
-            setVetements(user.vetements);
-            // Récupérer tous les skins débloqués de tous les vêtements
-            const allSkins = user.vetements.flatMap(v => v.skinsDebloques);
-            setSkins(allSkins);
-        });
+        getUser().then(user => setVetements(user.vetements));
     }, []);
 
+    const outfits = useMemo(
+        () =>
+            vetements.length
+                ? vetements.map(v => ({
+                      id: v.id,
+                      label: v.nom,
+                      image: require('../assets/tshirt.png'),
+                  }))
+                : [
+                      { id: 'placeholder-1', label: 'T-shirt HAAZE #1', image: require('../assets/tshirt.png') },
+                      { id: 'placeholder-2', label: 'Ajouter', image: null },
+                  ],
+        [vetements],
+    );
+
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Ta Collection</Text>
-            <Text style={styles.sectionTitle}>Vêtements associés</Text>
-            <FlatList
-                data={vetements}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                    <NeonCard color="blue">
-                        <Text style={styles.vetementName}>{item.nom}</Text>
-                        <Text style={styles.vetementId}>NFC : {item.nfcId}</Text>
-                    </NeonCard>
-                )}
-                ListEmptyComponent={<Text style={styles.empty}>Aucun vêtement associé</Text>}
-            />
-            <Text style={styles.sectionTitle}>Skins débloqués</Text>
-            <FlatList
-                data={skins}
-                keyExtractor={item => item.id}
-                horizontal
-                renderItem={({ item }) => (
-                    <NeonCard color="orange" style={{width: 110, alignItems: 'center', padding: 10, marginRight: 12}}>
-                        <Image source={require('../assets/vetement-principal.png')} style={styles.skinImage} resizeMode="contain" />
-                        <Text style={styles.skinName}>{item.nom}</Text>
-                    </NeonCard>
-                )}
-                ListEmptyComponent={<Text style={styles.empty}>Aucun skin débloqué</Text>}
-                contentContainerStyle={{ paddingVertical: 10 }}
-            />
-        </View>
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+            <View style={styles.heroHeader}>
+                <Image source={require('../assets/logo.png')} style={styles.logo} tintColor={COLORS.textDark} />
+                <Text style={styles.pseudo}>Je suis le pseudo</Text>
+            </View>
+
+            <Section title="MES VÊTEMENTS">
+                <View style={styles.outfitGrid}>
+                    {outfits.map(outfit => (
+                        <View key={outfit.id} style={styles.outfitCard}>
+                            {outfit.image ? (
+                                <Image source={outfit.image} style={styles.outfitImage} resizeMode="contain" />
+                            ) : (
+                                <Text style={styles.addSymbol}>＋</Text>
+                            )}
+                            <Text style={styles.outfitLabel}>{outfit.label}</Text>
+                        </View>
+                    ))}
+                </View>
+            </Section>
+
+            <Section title="COLLECTIONS">
+                <ImageBackground
+                    source={require('../assets/badge-3.png')}
+                    style={styles.collectionHero}
+                    imageStyle={styles.collectionHeroImage}
+                >
+                    <View style={styles.collectionHeroOverlay} />
+                    <Text style={styles.collectionHeroText}>HAAZE #1</Text>
+                </ImageBackground>
+            </Section>
+
+            <Section title="COLLECTIONS À VENIR">
+                <View style={styles.comingGrid}>
+                    {comingCollections.map(collection => (
+                        <ImageBackground
+                            key={collection.id}
+                            source={collection.image}
+                            style={styles.comingCard}
+                            imageStyle={styles.comingImage}
+                        >
+                            <View style={styles.comingOverlay} />
+                            <Text style={styles.comingTitle}>{collection.title}</Text>
+                        </ImageBackground>
+                    ))}
+                </View>
+            </Section>
+        </ScrollView>
     );
 }
 
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.sectionUnderline} />
+        </View>
+        {children}
+    </View>
+);
+
 const styles = StyleSheet.create({
-    container: {
+    screen: {
         flex: 1,
-        padding: 20,
-        backgroundColor: '#0A0A0A',
+        backgroundColor: COLORS.backgroundLight,
     },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#3300FD',
-        marginBottom: 18,
-        letterSpacing: 1.5,
-        fontFamily: 'Minasans',
-        // Aucun effet de néon
+    content: {
+        paddingHorizontal: 20,
+        paddingTop: 30,
+        paddingBottom: 90,
+        gap: 26,
+    },
+    heroHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+    },
+    logo: {
+        width: 42,
+        height: 42,
+    },
+    pseudo: {
+        fontSize: 20,
+        fontFamily: FONTS.title,
+        color: COLORS.textDark,
+        textTransform: 'uppercase',
+    },
+    section: {
+        gap: 16,
+    },
+    sectionHeader: {
+        gap: 6,
     },
     sectionTitle: {
-        color: '#FF3600',
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginTop: 24,
-        marginBottom: 10,
-        letterSpacing: 1.2,
-        fontFamily: 'Minasans',
-        textShadowColor: '#FF3600',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
+        fontSize: 18,
+        fontFamily: FONTS.title,
+        color: COLORS.primaryBlue,
+        letterSpacing: 1,
     },
-    vetementCard: {
-        backgroundColor: '#18181B',
-        borderRadius: 10,
-        padding: 14,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#6EE7FF',
-        shadowColor: '#3300FD',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 10,
-        elevation: 6,
+    sectionUnderline: {
+        width: 72,
+        height: 6,
+        borderRadius: 999,
+        backgroundColor: COLORS.accentYellow,
     },
-    vetementName: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 2,
-        fontFamily: 'Helvetica',
+    outfitGrid: {
+        flexDirection: 'row',
+        gap: 16,
     },
-    vetementId: {
-        color: '#AAA',
-        fontSize: 13,
-        fontFamily: 'Helvetica',
-    },
-    skinCard: {
-        backgroundColor: 'transparent',
-        borderRadius: 16,
-        padding: 10,
-        marginRight: 12,
-        alignItems: 'center',
+    outfitCard: {
+        flex: 1,
+        borderRadius: 20,
         borderWidth: 2,
-        borderColor: '#3300FD',
+        borderColor: '#b3a7ff',
+        padding: 16,
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    outfitImage: {
         width: 110,
-        shadowColor: '#3300FD',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.9,
-        shadowRadius: 16,
-        elevation: 8,
+        height: 140,
+        marginBottom: 12,
     },
-    skinImage: {
-        width: 60,
-        height: 60,
-        marginBottom: 8,
-        resizeMode: 'contain',
-    },
-    skinName: {
-        color: '#FFF',
-        fontSize: 14,
+    outfitLabel: {
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.primaryBlue,
         textAlign: 'center',
-        fontFamily: 'Helvetica',
-        textShadowColor: '#3300FD',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
     },
-    empty: {
-        color: '#AAA',
-        fontStyle: 'italic',
-        marginTop: 10,
+    addSymbol: {
+        fontSize: 48,
+        color: '#9d8bff',
+        marginVertical: 32,
+    },
+    collectionHero: {
+        height: 200,
+        borderRadius: 24,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    collectionHeroImage: {
+        resizeMode: 'cover',
+    },
+    collectionHeroOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(20, 10, 60, 0.35)',
+    },
+    collectionHeroText: {
+        color: '#fff',
+        fontSize: 26,
+        fontFamily: FONTS.title,
+        letterSpacing: 1,
+    },
+    comingGrid: {
+        flexDirection: 'row',
+        gap: 14,
+    },
+    comingCard: {
+        flex: 1,
+        height: 170,
+        borderRadius: 18,
+        overflow: 'hidden',
+    },
+    comingImage: {
+        resizeMode: 'cover',
+    },
+    comingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(20, 10, 60, 0.45)',
+    },
+    comingTitle: {
+        color: '#fff',
+        fontSize: 16,
+        fontFamily: FONTS.title,
+        textAlign: 'center',
+        marginTop: 'auto',
+        marginBottom: 20,
     },
 });

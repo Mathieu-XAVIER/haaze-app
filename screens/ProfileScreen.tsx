@@ -1,9 +1,15 @@
-import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
-import {getUser, logout, User} from '../services/api';
-import NeonCard from '../components/NeonCard';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { getUser, logout, User } from '../services/api';
+import { COLORS, FONTS } from '../styles/theme';
 
-export default function ProfileScreen({onLogout}: { onLogout: () => void }) {
+const badges = [
+    { id: 'b1', image: require('../assets/badge-1.png') },
+    { id: 'b2', image: require('../assets/badge-2.png') },
+    { id: 'b3', image: require('../assets/badge-3.png') },
+];
+
+export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
@@ -15,139 +21,175 @@ export default function ProfileScreen({onLogout}: { onLogout: () => void }) {
         onLogout();
     };
 
+    const derivedStats = [
+        {
+            id: 'owned',
+            label: 'Vêtements possédés',
+            value: String(user?.vetements?.length ?? 1),
+        },
+        { id: 'missions', label: 'Nombre de missions réussis', value: '1' },
+        { id: 'xp', label: 'Expérience totale obtenue', value: '2 850 xp' },
+        { id: 'skins', label: 'Nombre de skin(s)', value: '1' },
+    ];
+
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.logo}>H</Text>
-                <Text style={styles.username}>{user?.name || 'Je suis le pseudo'}</Text>
-            </View>
-
-            <View style={styles.tshirtContainer}>
-                <Text style={styles.tshirtName}>T-shirt HAAZE #1</Text>
-                <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, {width: '40%'}]}/>
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+            <ImageBackground
+                source={require('../assets/bg-vortex.png')}
+                style={styles.hero}
+                imageStyle={styles.heroImage}
+            >
+                <View style={styles.heroOverlay} />
+                <View style={styles.heroContent}>
+                    <Image source={require('../assets/badge-3.png')} style={styles.avatar} />
+                    <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
+                    <Text style={styles.subtitle}>Membre depuis le 20 octobre 2025</Text>
                 </View>
-                <Text style={styles.level}>Lv.1</Text>
-            </View>
+            </ImageBackground>
 
-            <View style={styles.buttonRow}>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Voir tous les skins</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Changer de vêtements</Text>
-                </TouchableOpacity>
-            </View>
+            <Section title="STATISTIQUES">
+                {derivedStats.map(stat => (
+                    <View key={stat.id} style={styles.statCard}>
+                        <Text style={styles.statLabel}>{stat.label} :</Text>
+                        <Text style={styles.statValue}>{stat.value}</Text>
+                    </View>
+                ))}
+            </Section>
 
-            <Text style={styles.sectionTitle}>MISSIONS EN COURS</Text>
-            <FlatList
-                data={[1, 2, 3]}
-                keyExtractor={(item) => item.toString()}
-                renderItem={({item}) => (
-                    <View style={styles.missionCard}>
-                        <Text style={styles.missionText}>Je suis la mission {item} +350 XP</Text>
-                        <View style={styles.missionBar}>
-                            <View style={[styles.missionFill, {width: '50%'}]}/>
+            <Section title="BADGES">
+                <View style={styles.badgeRow}>
+                    {badges.map(badge => (
+                        <View key={badge.id} style={styles.badgeCard}>
+                            <Image source={badge.image} style={styles.badgeImage} resizeMode="contain" />
                         </View>
-                    </View>
-                )}
-            />
-
-            <TouchableOpacity style={styles.missionButton}>
-                <Text style={styles.missionButtonText}>Voir toutes les missions</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.sectionTitle}>Collections à venir</Text>
-            <FlatList
-                horizontal
-                data={[
-                    {id: '1', label: 'HAAZE X OL'},
-                    {id: '2', label: 'HAAZE X FOREVER VACATION'},
-                ]}
-                renderItem={({item}) => (
-                    <View style={styles.collectionCard}>
-                        <Text style={styles.collectionText}>{item.label}</Text>
-                    </View>
-                )}
-                keyExtractor={(item) => item.id}
-            />
+                    ))}
+                </View>
+            </Section>
 
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
                 <Text style={styles.logoutText}>Se déconnecter</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 }
 
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={styles.sectionUnderline} />
+        </View>
+        {children}
+    </View>
+);
+
 const styles = StyleSheet.create({
-    container: {flex: 1, backgroundColor: '#fff', padding: 20},
-    header: {flexDirection: 'row', alignItems: 'center', marginBottom: 20},
-    logo: {fontSize: 40, fontWeight: 'bold', marginRight: 10},
-    username: {fontSize: 18, fontWeight: '500'},
-    tshirtContainer: {marginBottom: 20},
-    tshirtName: {fontSize: 16, marginBottom: 6},
-    progressBar: {
-        height: 8,
-        backgroundColor: '#eee',
-        borderRadius: 4,
-        overflow: 'hidden',
+    screen: {
+        flex: 1,
+        backgroundColor: COLORS.backgroundLight,
     },
-    progressFill: {
-        height: 8,
-        backgroundColor: '#3300FD',
+    content: {
+        paddingBottom: 90,
     },
-    level: {fontSize: 12, color: '#555', marginTop: 4},
-    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', marginVertical: 16},
-    button: {
-        backgroundColor: '#000',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 10,
+    hero: {
+        height: 260,
+        justifyContent: 'flex-end',
     },
-    buttonText: {color: '#fff', fontWeight: 'bold'},
-    sectionTitle: {fontSize: 18, fontWeight: 'bold', color: '#3300FD', marginVertical: 12},
-    missionCard: {
-        backgroundColor: '#3300FD',
-        padding: 14,
-        borderRadius: 10,
-        marginBottom: 10,
+    heroImage: {
+        resizeMode: 'cover',
     },
-    missionText: {color: '#fff', marginBottom: 4},
-    missionBar: {
-        height: 6,
-        backgroundColor: '#fff',
-        borderRadius: 3,
-        overflow: 'hidden',
+    heroOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255,255,255,0.25)',
     },
-    missionFill: {height: 6, backgroundColor: '#000'},
-    missionButton: {
-        marginTop: 10,
-        alignSelf: 'center',
-        backgroundColor: '#fff',
-        padding: 10,
-    },
-    missionButtonText: {
-        color: '#3300FD',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
-    collectionCard: {
-        backgroundColor: '#000',
-        borderRadius: 12,
-        marginRight: 10,
-        padding: 20,
-        width: 160,
-        justifyContent: 'center',
+    heroContent: {
         alignItems: 'center',
+        paddingBottom: 30,
+        gap: 8,
     },
-    collectionText: {color: '#fff', textAlign: 'center', fontWeight: 'bold'},
+    avatar: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        borderWidth: 4,
+        borderColor: '#fff',
+    },
+    pseudo: {
+        fontFamily: FONTS.title,
+        fontSize: 20,
+        color: COLORS.textDark,
+        textTransform: 'uppercase',
+    },
+    subtitle: {
+        fontFamily: FONTS.body,
+        color: '#5c5c5c',
+    },
+    section: {
+        paddingHorizontal: 20,
+        marginTop: 24,
+        gap: 12,
+    },
+    sectionHeader: {
+        gap: 6,
+    },
+    sectionTitle: {
+        fontFamily: FONTS.title,
+        color: COLORS.primaryBlue,
+        fontSize: 18,
+        letterSpacing: 1,
+    },
+    sectionUnderline: {
+        width: 80,
+        height: 6,
+        borderRadius: 999,
+        backgroundColor: COLORS.accentYellow,
+    },
+    statCard: {
+        borderWidth: 1.5,
+        borderColor: '#c3b9ff',
+        borderRadius: 20,
+        padding: 18,
+        backgroundColor: '#fff',
+    },
+    statLabel: {
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.primaryBlue,
+        marginBottom: 6,
+    },
+    statValue: {
+        fontFamily: FONTS.body,
+        color: COLORS.textDark,
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 14,
+    },
+    badgeCard: {
+        flex: 1,
+        height: 90,
+        borderRadius: 18,
+        borderWidth: 2,
+        borderColor: '#e3dbff',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    badgeImage: {
+        width: 48,
+        height: 48,
+    },
     logoutButton: {
         marginTop: 30,
         alignSelf: 'center',
-        backgroundColor: '#FF3600',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 10,
+        paddingHorizontal: 26,
+        paddingVertical: 12,
+        borderRadius: 24,
+        borderWidth: 2,
+        borderColor: COLORS.primaryBlue,
     },
-    logoutText: {color: '#fff', fontWeight: 'bold'},
+    logoutText: {
+        color: COLORS.primaryBlue,
+        fontFamily: FONTS.bodyBold,
+    },
 });

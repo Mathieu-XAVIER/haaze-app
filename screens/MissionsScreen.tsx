@@ -1,221 +1,266 @@
-import React, { useEffect, useState } from 'react';
-import {View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpacity} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import CustomBlueProgressBar from "../components/CustomBlueProgressBar";
-import MissionCard from "../components/MissionCard";
-import CustomOrangeProgressBar from "../components/CustomOrangeProgressBar";
-import SectionTitle from "../components/SectionTitle";
-import { getMissions, Mission } from '../services/api';
-import NeonButton from '../components/NeonButton';
-import NeonProgressBar from '../components/NeonProgressBar';
+import React from 'react';
+import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { COLORS, FONTS } from '../styles/theme';
+
+type Mission = {
+    id: string;
+    title: string;
+    reward: string;
+    progress: number;
+    total: number;
+};
+
+const missions: Mission[] = [
+    { id: '1', title: 'Réponds à ce quizz', reward: '+1 skin', progress: 1, total: 2 },
+    { id: '2', title: 'Change 1 fois de skin', reward: '+500 xp', progress: 1, total: 2 },
+    { id: '3', title: "Découvre l’univers de cette collection", reward: '+750 xp', progress: 1, total: 2 },
+];
+
+const skins = [
+    { id: 'skin-1', image: require('../assets/tshirt.png') },
+    { id: 'skin-2', image: require('../assets/tshirt.png') },
+    { id: 'add', image: null },
+];
+
+const MissionCard = ({ mission }: { mission: Mission }) => {
+    const ratio = Math.min(mission.progress / mission.total, 1);
+    return (
+        <View style={styles.missionCard}>
+            <View style={styles.missionHeader}>
+                <Text style={styles.missionTitle}>{mission.title}</Text>
+                <Text style={styles.missionReward}>{mission.reward}</Text>
+            </View>
+            <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${ratio * 100}%` }]} />
+            </View>
+            <Text style={styles.progressLabel}>
+                {mission.progress}/{mission.total}
+            </Text>
+        </View>
+    );
+};
+
+const BorderButton = ({
+    children,
+    variant = 'primary',
+}: {
+    children: React.ReactNode;
+    variant?: 'primary' | 'dark';
+}) => (
+    <View style={[styles.borderButton, variant === 'dark' && styles.borderButtonDark]}>
+        <Text style={[styles.borderButtonText, variant === 'dark' && styles.borderButtonTextDark]}>{children}</Text>
+    </View>
+);
 
 export default function MissionsScreen() {
-    const [missions, setMissions] = useState<Mission[]>([]);
-
-    useEffect(() => {
-        getMissions().then(setMissions);
-    }, []);
-
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Image source={require('../assets/logo.png')} style={styles.logo} />
-                <NeonProgressBar
-                    progress={0.4}
-                    pseudo="Mathieu"
-                    level={1}
-                    nextLevel={2}
-                    xpText="800/2000xp"
-                    color="blue"
-                    compact={true}
-                />
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+            <View style={styles.heroHeader}>
+                <Image source={require('../assets/logo.png')} style={styles.logo} tintColor={COLORS.textDark} />
+                <Text style={styles.pseudo}>Je suis le pseudo</Text>
             </View>
 
-            <View style={styles.sectionWrapper}>
-                <ImageBackground
-                    source={require('../assets/bg-title-missions.png')}
-                    style={styles.missionTitleWrapper}
-                    imageStyle={styles.missionTitleImage}
-                    resizeMode="cover"
-                >
-                    <SectionTitle title="MISSIONS EN COURS"/>
-                </ImageBackground>
-
-                {/* Affichage dynamique des missions mockées */}
-                {missions.map(mission => (
-                    <MissionCard
-                        key={mission.id}
-                        title={mission.titre}
-                        progress={mission.terminee ? 1 : 0}
-                        total={1}
-                        xp={mission.type === 'scan' ? 350 : mission.type === 'ra' ? 500 : 750}
-                    />
+            <View style={styles.skinsRow}>
+                {skins.map(skin => (
+                    <View key={skin.id} style={[styles.skinBubble, !skin.image && styles.skinBubbleEmpty]}>
+                        {skin.image ? (
+                            <Image source={skin.image} style={styles.skinImage} resizeMode="contain" />
+                        ) : (
+                            <Text style={styles.addSymbol}>＋</Text>
+                        )}
+                    </View>
                 ))}
-
-                <NeonButton color="blue" onPress={() => {}} style={{marginTop: 16}}>
-                    Voir toutes les missions
-                </NeonButton>
             </View>
 
-            <View style={styles.tshirtContainer}>
-                <ImageBackground
-                    source={require('../assets/bg-vortex.png')}
-                    style={styles.tshirtWrapper}
-                    imageStyle={styles.vortexImage}
-                    resizeMode="cover"
-                >
-                    <Image source={require('../assets/tshirt.png')} style={styles.tshirtImage} resizeMode="contain" />
-                </ImageBackground>
-
-                <NeonProgressBar
-                    progress={0.6}
-                    title="T-shirt HAAZE"
-                    level={3}
-                    nextLevel={4}
-                    xpText="3500/6000xp"
-                    color="orange"
-                />
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>T-SHIRT HAAZE #1</Text>
+                <View style={styles.sectionUnderline} />
             </View>
 
-            <View style={styles.sectionWrapper}>
-                <ImageBackground
-                    source={require('../assets/bg-title-missions.png')}
-                    style={styles.missionTitleWrapper}
-                    imageStyle={styles.missionTitleImage}
-                    resizeMode="cover"
-                >
-                    <SectionTitle title="Missions de ce vêtement"/>
-                </ImageBackground>
+            {missions.map(mission => (
+                <MissionCard key={mission.id} mission={mission} />
+            ))}
 
-                {/* Filtres */}
-                <View style={styles.filterContainer}>
-                    <Text style={styles.filterLabel}>Trier par :</Text>
-                    <TouchableOpacity style={styles.filterButton}>
-                        <Text style={styles.filterText}>XP décroissant ⌄</Text>
-                    </TouchableOpacity>
+            <BorderButton>Voir toutes les missions</BorderButton>
+
+            <View style={styles.heroFooter}>
+                <Image source={require('../assets/tshirt.png')} style={styles.heroImage} resizeMode="contain" />
+                <View style={styles.levelInfo}>
+                    <View style={styles.levelRow}>
+                        <Text style={styles.levelLabel}>T-shirt HAAZE</Text>
+                        <Text style={styles.levelLabel}>Lv. 1 → Lv. 2</Text>
+                    </View>
+                    <View style={styles.progressTrack}>
+                        <View style={[styles.progressFill, { width: '55%' }]} />
+                    </View>
+                    <View style={styles.buttonRow}>
+                        <BorderButton>Tester le skin</BorderButton>
+                        <BorderButton variant="dark">Voir tous les skins</BorderButton>
+                    </View>
                 </View>
-
-                {/* Liste de missions */}
-                <MissionCard title="Faire 2 pompes" progress={0} total={2} xp={350} terminee/>
-                <MissionCard title="Marcher 5000 pas" progress={0} total={5} xp={500}/>
-                <MissionCard title="Jouer 3 parties" progress={0} total={3} xp={750}/>
-
-                <NeonButton color="blue" onPress={() => {}} style={{marginTop: 16}}>
-                    Voir toutes les missions
-                </NeonButton>
             </View>
         </ScrollView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#000',
-        padding: 20,
-        paddingTop: 50,
+    screen: {
         flex: 1,
+        backgroundColor: COLORS.backgroundLight,
     },
-    header: {
+    content: {
+        paddingHorizontal: 20,
+        paddingTop: 30,
+        paddingBottom: 90,
+        gap: 20,
+    },
+    heroHeader: {
         flexDirection: 'row',
-        justifyContent: 'center',
         alignItems: 'center',
-        margin: 20,
+        gap: 12,
     },
     logo: {
-        width: 50,
-        height: 50,
-        marginRight: 8,
+        width: 42,
+        height: 42,
     },
-    sectionWrapper: {
-        padding: 16,
+    pseudo: {
+        fontSize: 20,
+        fontFamily: FONTS.title,
+        color: COLORS.textDark,
+        textTransform: 'uppercase',
     },
-    missionTitleWrapper: {
-        width: '100%',
-        height: 60,
-        justifyContent: 'center',
-        paddingLeft: 20,
-        marginLeft: -40,
-        marginBottom: 20,
+    skinsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 10,
     },
-    missionTitleImage: {
-        borderRadius: 20,
-        resizeMode: 'cover',
-        transform: [{scale: 1.5}],
-    },
-    neonButtonBlue: {
+    skinBubble: {
         flex: 1,
-        marginHorizontal: 5,
-        paddingVertical: 0,
-        borderRadius: 12,
+        height: 70,
+        borderRadius: 20,
+        borderWidth: 2,
+        borderColor: COLORS.primaryBlue,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#3300FD',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.9,
-        shadowRadius: 16,
-        elevation: 10,
+        backgroundColor: '#fff',
+    },
+    skinBubbleEmpty: {
+        borderStyle: 'dashed',
+        borderColor: '#c4b4ff',
+    },
+    skinImage: {
+        width: 45,
+        height: 45,
+    },
+    addSymbol: {
+        fontSize: 28,
+        color: '#9d8bff',
+    },
+    sectionHeader: {
+        marginTop: 10,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontFamily: FONTS.title,
+        color: COLORS.primaryBlue,
+        letterSpacing: 1,
+    },
+    sectionUnderline: {
+        width: 72,
+        height: 6,
+        borderRadius: 999,
+        backgroundColor: COLORS.accentYellow,
+        marginTop: 6,
+    },
+    missionCard: {
+        backgroundColor: COLORS.missionCard,
+        borderRadius: 20,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: COLORS.missionBorder,
+        marginTop: 12,
+    },
+    missionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    missionTitle: {
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.missionText,
+        flex: 1,
+        marginRight: 12,
+    },
+    missionReward: {
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.missionText,
+    },
+    progressTrack: {
+        height: 8,
+        borderRadius: 999,
+        backgroundColor: '#f7f2ff',
         overflow: 'hidden',
-        marginTop: 16,
     },
-    btnText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontFamily: 'Helvetica',
-        letterSpacing: 1.2,
-        textShadowColor: '#3300FD',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
+    progressFill: {
+        height: '100%',
+        backgroundColor: COLORS.primaryBlue,
+    },
+    progressLabel: {
+        marginTop: 6,
+        color: COLORS.missionText,
+        fontSize: 12,
+        fontFamily: FONTS.body,
+    },
+    borderButton: {
+        flex: 1,
         paddingVertical: 14,
-    },
-    btnPlus: {
-        color: '#FF3600',
-        fontSize: 22,
-        fontWeight: 'bold',
-        marginLeft: 10,
-        textShadowColor: '#FF3600',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
-    },
-    tshirtContainer: {
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: COLORS.primaryBlue,
         alignItems: 'center',
-        justifyContent: 'center',
+        marginTop: 16,
+        backgroundColor: '#fff',
     },
-    tshirtWrapper: {
-        width: 400,
-        height: 280,
-        justifyContent: 'center',
-        alignItems: 'center',
+    borderButtonDark: {
+        borderColor: COLORS.textDark,
     },
-    vortexImage: {
-        opacity: 0.8,
+    borderButtonText: {
+        color: COLORS.primaryBlue,
+        fontFamily: FONTS.bodyBold,
     },
-    tshirtImage: {
-        width: 190,
-        height: 190,
-        resizeMode: 'contain',
+    borderButtonTextDark: {
+        color: COLORS.textDark,
     },
-    filterContainer: {
+    heroFooter: {
+        backgroundColor: '#fff',
+        borderRadius: 26,
+        padding: 18,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
-        marginLeft: 4,
+        gap: 20,
+        borderWidth: 2,
+        borderColor: '#e3dbff',
     },
-    filterLabel: {
-        color: '#AAA',
-        fontSize: 14,
-        marginRight: 8,
+    heroImage: {
+        width: 140,
+        height: 160,
     },
-    filterButton: {
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderWidth: 1,
-        borderColor: '#3300FD',
-        borderRadius: 4,
+    levelInfo: {
+        flex: 1,
     },
-    filterText: {
-        color: '#FFF',
-        fontSize: 14,
-    }
+    levelRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
+    levelLabel: {
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.textDark,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginTop: 12,
+    },
 });
