@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, ImageBackground } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getUser, Vetement } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
@@ -44,10 +45,18 @@ export default function CollectionScreen() {
 
     return (
         <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-            <View style={styles.heroHeader}>
-                <Image source={require('../assets/logo.png')} style={styles.logo} tintColor={COLORS.textDark} />
-                <Text style={styles.pseudo}>Je suis le pseudo</Text>
-            </View>
+            <LinearGradient
+                colors={['#CFCEFB', '#f5f4ff', COLORS.backgroundLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                locations={[0, 0.5, 1]}
+                style={styles.heroSection}
+            >
+                <View style={styles.heroHeader}>
+                    <Image source={require('../assets/logo.png')} style={styles.logo} tintColor={COLORS.textDark} />
+                    <Text style={styles.pseudo}>Je suis le pseudo</Text>
+                </View>
+            </LinearGradient>
 
             <Section title="MES VÊTEMENTS">
                 <View style={styles.outfitGrid}>
@@ -97,8 +106,10 @@ export default function CollectionScreen() {
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={styles.section}>
         <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
-            <View style={styles.sectionUnderline} />
+            <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>{title}</Text>
+                <View style={styles.sectionUnderline} />
+            </View>
         </View>
         {children}
     </View>
@@ -111,14 +122,23 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingHorizontal: 20,
-        paddingTop: 30,
-        paddingBottom: 90,
+        paddingTop: 40,
+        paddingBottom: 120,
         gap: 26,
+    },
+    heroSection: {
+        marginBottom: 20,
+        paddingVertical: 20,
+        paddingTop: 30,
+        marginHorizontal: -20,
+        paddingHorizontal: 20,
     },
     heroHeader: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 12,
+        marginTop: 10,
     },
     logo: {
         width: 42,
@@ -134,19 +154,25 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     sectionHeader: {
-        gap: 6,
+        marginTop: 20,
+        marginBottom: 16,
+    },
+    sectionTitleContainer: {
+        alignSelf: 'flex-start',
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 24,
         fontFamily: FONTS.title,
         color: COLORS.primaryBlue,
         letterSpacing: 1,
+        lineHeight: 28,
     },
     sectionUnderline: {
-        width: 72,
         height: 6,
-        borderRadius: 999,
+        borderRadius: 10,
         backgroundColor: COLORS.accentYellow,
+        marginTop: -2,
+        alignSelf: 'stretch',
     },
     outfitGrid: {
         flexDirection: 'row',

@@ -76,8 +76,10 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={styles.section}>
         <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{title}</Text>
-            <View style={styles.sectionUnderline} />
+            <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>{title}</Text>
+                <View style={styles.sectionUnderline} />
+            </View>
         </View>
         {children}
     </View>
@@ -89,7 +91,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.backgroundLight,
     },
     content: {
-        paddingBottom: 90,
+        paddingBottom: 120,
     },
     hero: {
         height: 260,
@@ -130,19 +132,25 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     sectionHeader: {
-        gap: 6,
+        marginTop: 20,
+        marginBottom: 16,
+    },
+    sectionTitleContainer: {
+        alignSelf: 'flex-start',
     },
     sectionTitle: {
         fontFamily: FONTS.title,
         color: COLORS.primaryBlue,
-        fontSize: 18,
+        fontSize: 24,
         letterSpacing: 1,
+        lineHeight: 28,
     },
     sectionUnderline: {
-        width: 80,
         height: 6,
-        borderRadius: 999,
+        borderRadius: 10,
         backgroundColor: COLORS.accentYellow,
+        marginTop: -2,
+        alignSelf: 'stretch',
     },
     statCard: {
         borderWidth: 1.5,
