@@ -1,13 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getUser, logout, User } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
-const badges = [
-    { id: 'b1', image: require('../assets/badge-1.png') },
-    { id: 'b2', image: require('../assets/badge-2.png') },
-    { id: 'b3', image: require('../assets/badge-3.png') },
-];
+const assets = {
+    background: 'https://www.figma.com/api/mcp/asset/4eea6cce-fa6f-4789-889e-fd82d9276671',
+    avatar: 'https://www.figma.com/api/mcp/asset/b892f95b-4012-4a35-bc0e-98a156a6baad',
+    settings: 'https://www.figma.com/api/mcp/asset/80df65ec-8540-47d6-b61e-268fcf91c2ca',
+    badgeTotem: 'https://www.figma.com/api/mcp/asset/e8ff4d99-489a-43fb-9a30-a976fd6fcb20',
+    badgeOrange: 'https://www.figma.com/api/mcp/asset/87e916ab-70e9-431c-a5a7-9cd5961e5ebe',
+    badgeDiamond: 'https://www.figma.com/api/mcp/asset/22f132b5-df0b-4501-b6d8-ee85ef3f4984',
+};
+
+type SectionProps = {
+    title: string;
+    underlineWidth?: number;
+    children: React.ReactNode;
+};
 
 export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     const [user, setUser] = useState<User | null>(null);
@@ -28,58 +38,72 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
             value: String(user?.vetements?.length ?? 1),
         },
         { id: 'missions', label: 'Nombre de missions réussis', value: '1' },
-        { id: 'xp', label: 'Expérience totale obtenue', value: '2 850 xp' },
+        { id: 'xp', label: 'Expérience totale obtenue', value: '2 850xp' },
         { id: 'skins', label: 'Nombre de skin(s)', value: '1' },
     ];
 
     return (
-        <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-            <ImageBackground
-                source={require('../assets/bg-vortex.png')}
-                style={styles.hero}
-                imageStyle={styles.heroImage}
-            >
-                <View style={styles.heroOverlay} />
-                <View style={styles.heroContent}>
-                    <Image source={require('../assets/badge-3.png')} style={styles.avatar} />
-                    <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
-                    <Text style={styles.subtitle}>Membre depuis le 20 octobre 2025</Text>
-                </View>
-            </ImageBackground>
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            <View style={styles.heroWrapper}>
+                <ImageBackground
+                    source={{ uri: assets.background }}
+                    style={styles.hero}
+                    imageStyle={styles.heroImage}
+                    resizeMode="cover"
+                >
+                    <LinearGradient
+                        colors={['rgba(207,206,251,0.85)', 'rgba(255,255,255,0.2)']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.heroGradient}
+                    />
 
-            <Section title="STATISTIQUES">
+                    <View style={styles.heroTopRow}>
+                        <View />
+                        <TouchableOpacity style={styles.settingsButton} onPress={handleLogout} activeOpacity={0.82}>
+                            <Image source={{ uri: assets.settings }} style={styles.settingsIcon} />
+                        </TouchableOpacity>
+                    </View>
+                </ImageBackground>
+
+                <View style={styles.avatarWrapper}>
+                    <View style={styles.avatarOuterRing}>
+                        <View style={styles.avatarInnerRing}>
+                            <Image source={{ uri: assets.avatar }} style={styles.avatar} />
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            <View style={styles.userInfo}>
+                <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
+                <Text style={styles.subtitle}>Membre depuis  le 20 octobre 2025</Text>
+            </View>
+
+            <Section title="STATISTIQUES" underlineWidth={150}>
                 {derivedStats.map(stat => (
                     <View key={stat.id} style={styles.statCard}>
-                        <Text style={styles.statLabel}>{stat.label} :</Text>
-                        <Text style={styles.statValue}>{stat.value}</Text>
+                        <Text style={styles.statText}>{stat.label} : {stat.value}</Text>
                     </View>
                 ))}
             </Section>
 
-            <Section title="BADGES">
+            <Section title="BADGES" underlineWidth={90}>
                 <View style={styles.badgeRow}>
-                    {badges.map(badge => (
-                        <View key={badge.id} style={styles.badgeCard}>
-                            <Image source={badge.image} style={styles.badgeImage} resizeMode="contain" />
-                        </View>
-                    ))}
+                    <Image source={{ uri: assets.badgeTotem }} style={styles.badgeImage} resizeMode="contain" />
+                    <Image source={{ uri: assets.badgeOrange }} style={styles.badgeImage} resizeMode="contain" />
+                    <Image source={{ uri: assets.badgeDiamond }} style={styles.badgeImage} resizeMode="contain" />
                 </View>
             </Section>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>Se déconnecter</Text>
-            </TouchableOpacity>
         </ScrollView>
     );
 }
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({ title, underlineWidth = 120, children }: SectionProps) => (
     <View style={styles.section}>
         <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-                <Text style={styles.sectionTitle}>{title}</Text>
-                <View style={styles.sectionUnderline} />
-            </View>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            <View style={[styles.sectionUnderline, { width: underlineWidth }]} />
         </View>
         {children}
     </View>
@@ -88,116 +112,148 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: COLORS.backgroundLight,
+        backgroundColor: '#f8f8f8',
     },
     content: {
         paddingBottom: 120,
     },
+    heroWrapper: {
+        position: 'relative',
+        height: 230,
+    },
     hero: {
-        height: 260,
-        justifyContent: 'flex-end',
+        flex: 1,
     },
     heroImage: {
-        resizeMode: 'cover',
+        width: '100%',
+        height: '100%',
     },
-    heroOverlay: {
+    heroGradient: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255,255,255,0.25)',
     },
-    heroContent: {
+    heroTopRow: {
+        position: 'absolute',
+        right: 18,
+        top: 18,
+        left: 18,
+        flexDirection: 'row',
         alignItems: 'center',
-        paddingBottom: 30,
-        gap: 8,
+        justifyContent: 'space-between',
+    },
+    settingsButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 2,
+        borderColor: '#1e1e1e',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
+    },
+    settingsIcon: {
+        width: 22,
+        height: 22,
+        tintColor: '#1e1e1e',
+    },
+    avatarWrapper: {
+        position: 'absolute',
+        bottom: -52,
+        alignSelf: 'center',
+    },
+    avatarOuterRing: {
+        width: 116,
+        height: 116,
+        borderRadius: 58,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#3300fd',
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 6,
+    },
+    avatarInnerRing: {
+        width: 98,
+        height: 98,
+        borderRadius: 49,
+        borderWidth: 4,
+        borderColor: COLORS.accentYellow,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#ffffff',
     },
     avatar: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        borderWidth: 4,
-        borderColor: '#fff',
+        width: 86,
+        height: 86,
+        borderRadius: 43,
+    },
+    userInfo: {
+        marginTop: 68,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        gap: 6,
     },
     pseudo: {
-        fontFamily: FONTS.title,
-        fontSize: 20,
-        color: COLORS.textDark,
-        textTransform: 'uppercase',
+        fontFamily: FONTS.bodyBold,
+        fontSize: 18,
+        color: '#1e1e1e',
     },
     subtitle: {
         fontFamily: FONTS.body,
-        color: '#5c5c5c',
+        fontSize: 12,
+        color: '#1e1e1e',
+        letterSpacing: 0.2,
     },
     section: {
         paddingHorizontal: 20,
-        marginTop: 24,
-        gap: 12,
+        marginTop: 32,
+        gap: 16,
     },
     sectionHeader: {
-        marginTop: 20,
-        marginBottom: 16,
-    },
-    sectionTitleContainer: {
-        alignSelf: 'flex-start',
+        marginBottom: 4,
     },
     sectionTitle: {
         fontFamily: FONTS.title,
-        color: COLORS.primaryBlue,
         fontSize: 24,
         letterSpacing: 1,
-        lineHeight: 28,
+        color: COLORS.primaryBlue,
     },
     sectionUnderline: {
         height: 6,
         borderRadius: 10,
         backgroundColor: COLORS.accentYellow,
         marginTop: -2,
-        alignSelf: 'stretch',
     },
     statCard: {
-        borderWidth: 1.5,
-        borderColor: '#c3b9ff',
-        borderRadius: 20,
-        padding: 18,
-        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: '#130077',
+        borderRadius: 8,
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        backgroundColor: '#ffffff',
+        shadowColor: '#130077',
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
     },
-    statLabel: {
+    statText: {
         fontFamily: FONTS.bodyBold,
+        fontSize: 11,
         color: COLORS.primaryBlue,
-        marginBottom: 6,
-    },
-    statValue: {
-        fontFamily: FONTS.body,
-        color: COLORS.textDark,
+        letterSpacing: 0.55,
     },
     badgeRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        gap: 14,
-    },
-    badgeCard: {
-        flex: 1,
-        height: 90,
-        borderRadius: 18,
-        borderWidth: 2,
-        borderColor: '#e3dbff',
-        backgroundColor: '#fff',
         alignItems: 'center',
-        justifyContent: 'center',
+        gap: 20,
+        marginTop: 12,
+        paddingHorizontal: 2,
     },
     badgeImage: {
-        width: 48,
-        height: 48,
-    },
-    logoutButton: {
-        marginTop: 30,
-        alignSelf: 'center',
-        paddingHorizontal: 26,
-        paddingVertical: 12,
-        borderRadius: 24,
-        borderWidth: 2,
-        borderColor: COLORS.primaryBlue,
-    },
-    logoutText: {
-        color: COLORS.primaryBlue,
-        fontFamily: FONTS.bodyBold,
+        width: 90,
+        height: 86,
     },
 });

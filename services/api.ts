@@ -9,10 +9,14 @@ const resolveApiBaseUrl = () => {
 
     const base = extra.apiUrl?.trim();
 
-    return (base && base.length > 0 ? base : 'http://127.0.0.1:8000/api').replace(/\/$/, '');
+    return (base && base.length > 0 ? base : 'https://haaze.mathieu-xavier.fr/api').replace(/\/$/, '');
 };
 
 export const API_BASE_URL = resolveApiBaseUrl();
+
+if (__DEV__) {
+    console.log('[API] base URL:', API_BASE_URL);
+}
 
 const api = axios.create({
     baseURL: API_BASE_URL,
