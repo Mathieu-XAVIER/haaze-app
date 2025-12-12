@@ -5,6 +5,7 @@ import BottomTabs from './navigation/BottomTabs';
 import LoginScreen from './screens/LoginScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ScanScreen from './screens/ScanScreen';
+import AddClothingScreen from './screens/AddClothingScreen';
 import { useAppFonts } from './hooks/useAppFonts';
 
 const Stack = createNativeStackNavigator();
@@ -51,6 +52,7 @@ export default function App() {
                         </Stack.Screen>
 
                         <Stack.Screen name="Scan" component={ScanScreen} />
+                        <Stack.Screen name="AddClothing" component={AddClothingScreen} />
                     </>
                 )}
             </Stack.Navigator>

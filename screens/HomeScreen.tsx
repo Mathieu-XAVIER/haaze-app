@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -9,42 +9,13 @@ import {
     ImageBackground,
     ImageSourcePropType,
     Platform,
+    ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgUri } from 'react-native-svg';
 import { Asset } from 'expo-asset';
 import { COLORS, FONTS } from '../styles/theme';
-
-type Mission = {
-    id: string;
-    title: string;
-    progress: number;
-    total: number;
-    xp: number;
-};
-
-type Collection = {
-    id: string;
-    title: string;
-    subtitle: string;
-    image: ImageSourcePropType;
-};
-
-const missions: Mission[] = [
-    { id: '1', title: 'Je suis la mission 1', progress: 1, total: 2, xp: 350 },
-    { id: '2', title: 'Je suis la mission 2', progress: 1, total: 2, xp: 350 },
-    { id: '3', title: 'Je suis la mission 3', progress: 1, total: 2, xp: 350 },
-];
-
-const collections: Collection[] = [
-    { id: 'ol', title: 'HAAZE X OL', subtitle: 'COLLECTIONS À VENIR', image: require('../assets/badge-1.png') },
-    {
-        id: 'forever',
-        title: 'HAAZE X FOREVER VACATION',
-        subtitle: 'COLLECTIONS À VENIR',
-        image: require('../assets/badge-2.png'),
-    },
-];
+import { getUser, getMissions, getCollections, Mission, Collection, User } from '../services/api';
 
 const changeOutfitIcon = Asset.fromModule(require('../assets/picto-changer-de-vetement.svg'));
 changeOutfitIcon.downloadAsync?.();
@@ -124,7 +95,7 @@ const BorderButton = ({
 };
 
 const MissionCard = ({ mission }: { mission: Mission }) => {
-    const ratio = mission.progress / mission.total;
+    const ratio = Math.min(mission.progress / mission.total, 1);
     return (
         <View style={styles.missionCard}>
             <View style={styles.missionHeader}>
@@ -143,7 +114,7 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
     );
 };
 
-const CollectionCard = ({ collection }: { collection: Collection }) => (
+const CollectionCard = ({ collection }: { collection: { id: string; title: string; subtitle: string; image: ImageSourcePropType | { uri: string } } }) => (
     <ImageBackground source={collection.image} style={styles.collectionCard} imageStyle={styles.collectionImage}>
         <View style={styles.collectionOverlay} />
         <View style={styles.collectionTextWrapper}>
@@ -154,6 +125,54 @@ const CollectionCard = ({ collection }: { collection: Collection }) => (
 
 export default function HomeScreen() {
     const changeIconUri = changeOutfitIcon?.uri;
+    const [user, setUser] = useState<User | null>(null);
+    const [missions, setMissions] = useState<Mission[]>([]);
+    const [collections, setCollections] = useState<Collection[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [userData, missionsData, collectionsData] = await Promise.all([
+                getUser(),
+                getMissions(),
+                getCollections(),
+            ]);
+            setUser(userData);
+            setMissions(missionsData.slice(0, 3)); // Limiter à 3 missions pour l'écran d'accueil
+            setCollections(collectionsData.filter(c => c.coming_soon).slice(0, 2)); // Collections à venir
+        } catch (error) {
+            console.error('[HomeScreen] Erreur lors du chargement des données:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getProgressPercentage = () => {
+        if (!user || !user.xp || !user.xpForNextLevel) return 55;
+        const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
+        return (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+    };
+
+    const getCurrentLevel = () => {
+        return user?.level || 1;
+    };
+
+    const getNextLevel = () => {
+        return (user?.level || 1) + 1;
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.screen, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+            </View>
+        );
+    }
 
     return (
         <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
@@ -170,7 +189,7 @@ export default function HomeScreen() {
                         style={styles.heroLogo}
                         tintColor={COLORS.textDark}
                     />
-                    <Text style={styles.heroTitle}>Je suis le pseudo</Text>
+                    <Text style={styles.heroTitle}>{user?.name || 'Je suis le pseudo'}</Text>
                 </View>
                 <Image source={require('../assets/tshirt.png')} style={styles.heroImage} resizeMode="contain" />
 
@@ -180,11 +199,11 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.heroProgressTrack}>
-                    <View style={styles.heroProgressFill} />
+                    <View style={[styles.heroProgressFill, { width: `${getProgressPercentage()}%` }]} />
                 </View>
                 <View style={styles.levelRow}>
-                    <Text style={styles.levelLabel}>Lv. 1</Text>
-                    <Text style={styles.levelLabel}>Lv. 2</Text>
+                    <Text style={styles.levelLabel}>Lv. {getCurrentLevel()}</Text>
+                    <Text style={styles.levelLabel}>Lv. {getNextLevel()}</Text>
                 </View>
 
                 <View style={styles.buttonRow}>
@@ -199,9 +218,15 @@ export default function HomeScreen() {
                     <View style={styles.sectionUnderline} />
                 </View>
             </View>
-            {missions.map(mission => (
-                <MissionCard key={mission.id} mission={mission} />
-            ))}
+            {missions.length > 0 ? (
+                missions.map(mission => (
+                    <MissionCard key={mission.id} mission={mission} />
+                ))
+            ) : (
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>Aucune mission en cours</Text>
+                </View>
+            )}
             <View style={styles.missionsButtonContainer}>
                 <BorderButton variant="missions">Voir toutes les missions</BorderButton>
             </View>
@@ -213,9 +238,25 @@ export default function HomeScreen() {
                 </View>
             </View>
             <View style={styles.collectionGrid}>
-                {collections.map(collection => (
-                    <CollectionCard key={collection.id} collection={collection} />
-                ))}
+                {collections.length > 0 ? (
+                    collections.map(collection => (
+                        <CollectionCard
+                            key={collection.id}
+                            collection={{
+                                id: String(collection.id),
+                                title: collection.title,
+                                subtitle: collection.subtitle || 'COLLECTIONS À VENIR',
+                                image: collection.image
+                                    ? { uri: collection.image }
+                                    : require('../assets/badge-1.png'),
+                            }}
+                        />
+                    ))
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyStateText}>Aucune collection à venir</Text>
+                    </View>
+                )}
             </View>
         </ScrollView>
     );
@@ -235,8 +276,10 @@ const styles = StyleSheet.create({
         marginBottom: 30,
         paddingVertical: 20,
         paddingTop: 30,
+        paddingBottom: 30,
         marginHorizontal: -20,
         paddingHorizontal: 20,
+        minHeight: 400,
     },
     heroHeader: {
         flexDirection: 'row',
@@ -453,5 +496,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: FONTS.title,
         textAlign: 'center',
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyState: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        fontFamily: FONTS.body,
+        color: COLORS.textDark,
+        fontSize: 14,
     },
 });

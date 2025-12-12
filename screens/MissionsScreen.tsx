@@ -1,7 +1,8 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS, FONTS } from '../styles/theme';
+import { getUser, getMissions, getSkins, User, Mission, Skin } from '../services/api';
 
 const assets = {
     logo: 'https://www.figma.com/api/mcp/asset/5a24b7a1-cfaf-419c-8698-3f668cfb4eb0',
@@ -10,25 +11,10 @@ const assets = {
     progressFill: 'https://www.figma.com/api/mcp/asset/79ae9a43-82df-42c9-8558-de13d59a2f8c',
 };
 
-type Mission = {
-    id: string;
-    title: string;
-    reward: string;
-    progress: number;
-    total: number;
+const formatReward = (mission: Mission): string => {
+    if (mission.reward) return mission.reward;
+    return `+${mission.xp} xp`;
 };
-
-const missions: Mission[] = [
-    { id: '1', title: 'Suivre HAAZE sur Instagram', reward: '+750 xp', progress: 1, total: 2 },
-    { id: '2', title: 'Réponds à ce quizz', reward: '+1 skin', progress: 1, total: 2 },
-    { id: '3', title: 'Change 1 fois de skin', reward: '+500 xp', progress: 1, total: 2 },
-];
-
-const skins = [
-    { id: 'skin-1', image: assets.tshirt1, active: true },
-    { id: 'skin-2', image: assets.tshirt2, active: false },
-    { id: 'add', image: null, active: false },
-];
 
 const MissionCard = ({ mission }: { mission: Mission }) => {
     const ratio = Math.min(mission.progress / mission.total, 1);
@@ -37,7 +23,7 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
             <View style={styles.missionContent}>
                 <View style={styles.missionHeader}>
                     <Text style={styles.missionTitle}>{mission.title}</Text>
-                    <Text style={styles.missionReward}>{mission.reward}</Text>
+                    <Text style={styles.missionReward}>{formatReward(mission)}</Text>
                 </View>
                 <View style={styles.progressContainer}>
                     <View style={styles.progressTrack}>
@@ -57,27 +43,80 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
 };
 
 export default function MissionsScreen() {
+    const [user, setUser] = useState<User | null>(null);
+    const [missions, setMissions] = useState<Mission[]>([]);
+    const [skins, setSkins] = useState<Skin[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [userData, missionsData, skinsData] = await Promise.all([
+                getUser(),
+                getMissions(),
+                getSkins(),
+            ]);
+            setUser(userData);
+            setMissions(missionsData);
+            setSkins(skinsData);
+        } catch (error) {
+            console.error('[MissionsScreen] Erreur lors du chargement des données:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getActiveSkin = () => {
+        return skins.find(s => s.active) || skins[0];
+    };
+
+    const getProgressPercentage = () => {
+        if (!user || !user.xp || !user.xpForNextLevel) return 34;
+        const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
+        return (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.screen, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+            </View>
+        );
+    }
+
+    const activeSkin = getActiveSkin();
+    const displaySkins = skins.slice(0, 3);
+    const hasMoreSkins = skins.length > 3;
+
     return (
         <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <LinearGradient
-                colors={['rgba(207, 206, 251, 1)', 'rgba(255, 255, 255, 0)']}
-                start={{ x: 0.4, y: 0 }}
-                end={{ x: 0.6, y: 1 }}
+                colors={['#CFCEFB', '#f5f4ff', COLORS.backgroundLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                locations={[0, 0.5, 1]}
                 style={styles.heroSection}
             >
                 <View style={styles.heroHeader}>
-                    <Image source={{ uri: assets.logo }} style={styles.logo} resizeMode="contain" />
-                    <Text style={styles.pseudo}>Je suis le pseudo</Text>
+                    <Image
+                        source={require('../assets/logo.png')}
+                        style={styles.heroLogo}
+                        tintColor={COLORS.textDark}
+                    />
+                    <Text style={styles.heroTitle}>{user?.name || 'Je suis le pseudo'}</Text>
                 </View>
 
                 <View style={styles.skinsRow}>
-                    {skins.map(skin => (
+                    {displaySkins.map(skin => (
                         <View
                             key={skin.id}
                             style={[
                                 styles.skinBubble,
                                 skin.active && styles.skinBubbleActive,
-                                !skin.image && styles.skinBubbleEmpty,
                             ]}
                         >
                             {skin.image ? (
@@ -87,6 +126,11 @@ export default function MissionsScreen() {
                             )}
                         </View>
                     ))}
+                    {hasMoreSkins && (
+                        <View style={[styles.skinBubble, styles.skinBubbleEmpty]}>
+                            <Text style={styles.addSymbol}>+</Text>
+                        </View>
+                    )}
                 </View>
             </LinearGradient>
 
@@ -97,9 +141,15 @@ export default function MissionsScreen() {
                 </View>
 
                 <View style={styles.missionsList}>
-                    {missions.map(mission => (
-                        <MissionCard key={mission.id} mission={mission} />
-                    ))}
+                    {missions.length > 0 ? (
+                        missions.map(mission => (
+                            <MissionCard key={mission.id} mission={mission} />
+                        ))
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyStateText}>Aucune mission disponible</Text>
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.missionsButtonContainer}>
@@ -111,22 +161,26 @@ export default function MissionsScreen() {
 
             <View style={styles.heroFooter}>
                 <View style={styles.tshirtContainer}>
-                    <Image source={{ uri: assets.tshirt1 }} style={styles.heroImage} resizeMode="contain" />
+                    <Image
+                        source={activeSkin?.image ? { uri: activeSkin.image } : { uri: assets.tshirt1 }}
+                        style={styles.heroImage}
+                        resizeMode="contain"
+                    />
                 </View>
                 <View style={styles.levelInfo}>
-                    <Text style={styles.tshirtTitle}>T-shirt HAAZE #1</Text>
+                    <Text style={styles.tshirtTitle}>{activeSkin?.name || 'T-shirt HAAZE #1'}</Text>
                     <View style={styles.progressBarContainer}>
                         <LinearGradient
                             colors={['#6740ff', '#3300fd']}
                             start={{ x: 0, y: 0 }}
                             end={{ x: 1, y: 0 }}
-                            style={[styles.progressBarFill, { width: '34%' }]}
+                            style={[styles.progressBarFill, { width: `${getProgressPercentage()}%` }]}
                         />
                         <View style={styles.progressBarTrack} />
                     </View>
                     <View style={styles.levelLabels}>
-                        <Text style={styles.levelLabel}>Lv.1</Text>
-                        <Text style={styles.levelLabel}>Lv.2</Text>
+                        <Text style={styles.levelLabel}>Lv.{user?.level || 1}</Text>
+                        <Text style={styles.levelLabel}>Lv.{(user?.level || 1) + 1}</Text>
                     </View>
                     <View style={styles.buttonRow}>
                         <TouchableOpacity activeOpacity={0.8} style={styles.heroButton}>
@@ -145,32 +199,38 @@ export default function MissionsScreen() {
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#f8f8f8',
+        backgroundColor: COLORS.backgroundLight,
     },
     content: {
+        paddingHorizontal: 20,
         paddingBottom: 120,
+        paddingTop: 40,
     },
     heroSection: {
-        height: 444,
-        paddingTop: 55,
-        paddingHorizontal: 13,
-        alignItems: 'center',
+        marginBottom: 30,
+        paddingVertical: 20,
+        paddingTop: 30,
+        paddingBottom: 30,
+        marginHorizontal: -20,
+        paddingHorizontal: 20,
+        minHeight: 400,
     },
     heroHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 32,
-        marginBottom: 32,
+        justifyContent: 'center',
+        marginTop: 10,
     },
-    logo: {
-        width: 48,
-        height: 52,
+    heroLogo: {
+        width: 42,
+        height: 42,
+        marginRight: 12,
     },
-    pseudo: {
-        fontSize: 16,
-        fontFamily: FONTS.bodyBold,
-        color: '#1e1e1e',
-        letterSpacing: 0.8,
+    heroTitle: {
+        fontSize: 20,
+        fontFamily: FONTS.title,
+        color: COLORS.textDark,
+        textTransform: 'uppercase',
     },
     skinsRow: {
         flexDirection: 'row',
@@ -429,5 +489,19 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         letterSpacing: 0.6,
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+    },
+    emptyState: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        fontFamily: FONTS.body,
+        color: COLORS.textDark,
+        fontSize: 14,
     },
 });

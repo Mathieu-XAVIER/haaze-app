@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getUser, logout, User } from '../services/api';
+import { getUser, logout, getUserStats, User, UserStats } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
 const assets = {
@@ -21,26 +21,75 @@ type SectionProps = {
 
 export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     const [user, setUser] = useState<User | null>(null);
+    const [stats, setStats] = useState<UserStats | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getUser().then(setUser);
+        loadData();
     }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [userData, statsData] = await Promise.all([getUser(), getUserStats()]);
+            setUser(userData);
+            setStats(statsData);
+        } catch (error) {
+            console.error('[ProfileScreen] Erreur lors du chargement des données:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
         onLogout();
     };
 
+    const formatXP = (xp: number): string => {
+        return xp.toLocaleString('fr-FR') + ' xp';
+    };
+
     const derivedStats = [
         {
             id: 'owned',
             label: 'Vêtements possédés',
-            value: String(user?.vetements?.length ?? 1),
+            value: String(stats?.vetements_owned ?? user?.vetements?.length ?? 0),
         },
-        { id: 'missions', label: 'Nombre de missions réussis', value: '1' },
-        { id: 'xp', label: 'Expérience totale obtenue', value: '2 850xp' },
-        { id: 'skins', label: 'Nombre de skin(s)', value: '1' },
+        {
+            id: 'missions',
+            label: 'Nombre de missions réussis',
+            value: String(stats?.missions_completed ?? 0),
+        },
+        {
+            id: 'xp',
+            label: 'Expérience totale obtenue',
+            value: formatXP(stats?.total_xp ?? user?.xp ?? 0),
+        },
+        {
+            id: 'skins',
+            label: 'Nombre de skin(s)',
+            value: String(stats?.skins_count ?? 0),
+        },
     ];
+
+    const formatDate = (dateString?: string): string => {
+        if (!dateString) return 'Membre depuis le 20 octobre 2025';
+        try {
+            const date = new Date(dateString);
+            return `Membre depuis le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+        } catch {
+            return 'Membre depuis le 20 octobre 2025';
+        }
+    };
+
+    if (loading) {
+        return (
+            <View style={[styles.screen, styles.loadingContainer]}>
+                <ActivityIndicator size="large" color={COLORS.primaryBlue} />
+            </View>
+        );
+    }
 
     return (
         <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -77,7 +126,7 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
 
             <View style={styles.userInfo}>
                 <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
-                <Text style={styles.subtitle}>Membre depuis  le 20 octobre 2025</Text>
+                <Text style={styles.subtitle}>{formatDate()}</Text>
             </View>
 
             <Section title="STATISTIQUES" underlineWidth={150}>
@@ -255,5 +304,10 @@ const styles = StyleSheet.create({
     badgeImage: {
         width: 90,
         height: 86,
+    },
+    loadingContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
     },
 });
