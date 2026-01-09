@@ -8,13 +8,13 @@ import {
     ActivityIndicator,
     Alert,
     Platform,
+    useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { getUser, getOrderClothes, linkClothing, User, Order, Clothing } from '../services/api';
+import { getUser, getOrderClothes, linkClothing, linkOrderClothes, User, Order, Clothing } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
-// Import conditionnel de NFC Manager
 let NfcManager: any = null;
 let NfcTech: any = null;
 
@@ -26,7 +26,22 @@ try {
     console.log('[NFC] Module NFC non disponible (Expo Go)');
 }
 
+const formatDate = (dateString?: string): string => {
+    if (!dateString) return '';
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch (e) {
+        return dateString;
+    }
+};
+
 export default function AddClothingScreen() {
+    const { width } = useWindowDimensions();
     const navigation = useNavigation();
     const [user, setUser] = useState<User | null>(null);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -35,9 +50,9 @@ export default function AddClothingScreen() {
     const [selectedClothing, setSelectedClothing] = useState<Clothing | null>(null);
     const [loading, setLoading] = useState(true);
     const [scanning, setScanning] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     useEffect(() => {
-        // Initialiser NFC si disponible
         if (NfcManager) {
             NfcManager.start().catch((err: any) => {
                 console.log('[NFC] Erreur d\'initialisation:', err);
@@ -52,29 +67,54 @@ export default function AddClothingScreen() {
         };
     }, []);
 
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const userData = await getUser();
-            setUser(userData);
-            setOrders(userData.orders || []);
-        } catch (error) {
-            console.error('[AddClothingScreen] Erreur lors du chargement:', error);
-            Alert.alert('Erreur', 'Impossible de charger vos commandes');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSelectOrder = async (order: Order) => {
+    const handleSelectOrder = async (order: Order, userData?: User) => {
         setSelectedOrder(order);
         setSelectedClothing(null);
         try {
+            const currentUser = userData || user;
+            
+            try {
+                await linkOrderClothes(order.id);
+            } catch (linkError) {
+                console.log('[AddClothingScreen] Link order clothes:', linkError);
+            }
+            
             const orderClothes = await getOrderClothes(order.numero_commande);
             setClothes(orderClothes);
         } catch (error) {
             console.error('[AddClothingScreen] Erreur lors du chargement des vêtements:', error);
             Alert.alert('Erreur', 'Impossible de charger les vêtements de cette commande');
+        }
+    };
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const userData = await getUser();
+            setUser(userData);
+            
+            const sortedOrders = (userData.orders || []).sort((a: Order, b: Order) => {
+                const dateA = a.date || a.created_at || '';
+                const dateB = b.date || b.created_at || '';
+                
+                if (!dateA && !dateB) return 0;
+                if (!dateA) return 1;
+                if (!dateB) return -1;
+                
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+            });
+            
+            setOrders(sortedOrders);
+            
+            if (sortedOrders.length > 0 && isInitialLoad) {
+                setIsInitialLoad(false);
+                await handleSelectOrder(sortedOrders[0], userData);
+            }
+        } catch (error) {
+            console.error('[AddClothingScreen] Erreur lors du chargement:', error);
+            Alert.alert('Erreur', 'Impossible de charger vos commandes');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -84,11 +124,10 @@ export default function AddClothingScreen() {
             return;
         }
 
-        // Si NFC Manager n'est pas disponible (Expo Go), utiliser la simulation
         if (!NfcManager) {
             Alert.alert(
-                'Mode développement',
-                'Le scan NFC nécessite un build natif. Voulez-vous simuler la liaison ?',
+                'NFC non disponible dans Expo Go',
+                'Le scan NFC nécessite un development build. Pour tester le NFC réel, créez un build avec: eas build --profile development --platform ios\n\nVoulez-vous simuler la liaison pour le développement ?',
                 [
                     {
                         text: 'Annuler',
@@ -106,7 +145,8 @@ export default function AddClothingScreen() {
                                     [
                                         {
                                             text: 'OK',
-                                            onPress: () => {
+                                            onPress: async () => {
+                                                await loadData();
                                                 navigation.goBack();
                                             },
                                         },
@@ -127,7 +167,6 @@ export default function AddClothingScreen() {
         try {
             setScanning(true);
             
-            // Vérifier si NFC est disponible
             const isSupported = await NfcManager.isSupported();
             if (!isSupported) {
                 Alert.alert(
@@ -138,12 +177,93 @@ export default function AddClothingScreen() {
                 return;
             }
 
-            // Demander l'accès NFC
+            let nfcId = '';
+
+            if (Platform.OS === 'ios') {
+                return new Promise<void>((resolve, reject) => {
+                    let tagDetected = false;
+
+                    const cleanup = () => {
+                        NfcManager.setEventListener(null);
+                        NfcManager.cancelTechnologyRequest().catch(() => {});
+                        setScanning(false);
+                    };
+
+                    NfcManager.setEventListener((tag: any) => {
+                        if (tag && !tagDetected) {
+                            tagDetected = true;
+                            nfcId = tag.id || tag.identifier || '';
+                            
+                            if (nfcId) {
+                                if (Array.isArray(nfcId)) {
+                                    nfcId = nfcId.map((b: number) => b.toString(16).padStart(2, '0')).join(':');
+                                }
+                                
+                                linkClothing(selectedClothing.id, nfcId)
+                                    .then(() => {
+                                        cleanup();
+                                        Alert.alert(
+                                            'Succès',
+                                            'Vêtement lié avec succès !',
+                                            [
+                                                {
+                                                    text: 'OK',
+                                        onPress: async () => {
+                                            await loadData();
+                                            navigation.goBack();
+                                            resolve();
+                                        },
+                                                },
+                                            ]
+                                        );
+                                    })
+                                    .catch((err) => {
+                                        cleanup();
+                                        Alert.alert('Erreur', 'Impossible de lier le vêtement');
+                                        reject(err);
+                                    });
+                            } else {
+                                cleanup();
+                                Alert.alert('Erreur', 'Impossible de lire l\'identifiant NFC');
+                                reject(new Error('No NFC ID'));
+                            }
+                        }
+                    });
+
+                    NfcManager.start()
+                        .then(() => {
+                            Alert.alert(
+                                'Prêt à scanner',
+                                'Approchez le haut de votre iPhone du tag NFC',
+                                [{ text: 'OK' }]
+                            );
+                        })
+                        .catch((err) => {
+                            cleanup();
+                            Alert.alert('Erreur', 'Impossible de démarrer le scan NFC');
+                            reject(err);
+                        });
+
+                    setTimeout(() => {
+                        if (!tagDetected) {
+                            cleanup();
+                            Alert.alert(
+                                'Timeout',
+                                'Aucun tag NFC détecté. Voulez-vous réessayer ?',
+                                [
+                                    { text: 'Annuler', style: 'cancel', onPress: () => reject(new Error('Timeout')) },
+                                    { text: 'Réessayer', onPress: () => handleScanNFC() },
+                                ]
+                            );
+                        }
+                    }, 30000);
+                });
+            }
+
             await NfcManager.requestTechnology(NfcTech.Ndef);
 
-            // Lire le tag NFC
             const tag = await NfcManager.getTag();
-            const nfcId = tag?.id || '';
+            nfcId = tag?.id || '';
 
             if (!nfcId) {
                 Alert.alert('Erreur', 'Impossible de lire l\'identifiant NFC');
@@ -151,7 +271,6 @@ export default function AddClothingScreen() {
                 return;
             }
 
-            // Lier le vêtement au tag NFC
             await linkClothing(selectedClothing.id, nfcId);
 
             Alert.alert(
@@ -160,7 +279,8 @@ export default function AddClothingScreen() {
                 [
                     {
                         text: 'OK',
-                        onPress: () => {
+                        onPress: async () => {
+                            await loadData();
                             navigation.goBack();
                         },
                     },
@@ -170,12 +290,10 @@ export default function AddClothingScreen() {
             console.error('[AddClothingScreen] Erreur lors du scan NFC:', error);
             
             if (error.message?.includes('User canceled') || error.message?.includes('cancelled')) {
-                // L'utilisateur a annulé, pas besoin d'afficher d'erreur
                 setScanning(false);
                 return;
             }
 
-            // En cas d'erreur, proposer la simulation
             Alert.alert(
                 'Erreur NFC',
                 'Impossible de scanner la puce NFC. Voulez-vous simuler la liaison ?',
@@ -198,7 +316,8 @@ export default function AddClothingScreen() {
                                     [
                                         {
                                             text: 'OK',
-                                            onPress: () => {
+                                            onPress: async () => {
+                                                await loadData();
                                                 navigation.goBack();
                                             },
                                         },
@@ -220,7 +339,6 @@ export default function AddClothingScreen() {
                     await NfcManager.cancelTechnologyRequest();
                 }
             } catch (e) {
-                // Ignorer les erreurs de cancellation
             }
         }
     };
@@ -264,21 +382,30 @@ export default function AddClothingScreen() {
                     </View>
                 ) : (
                     <View style={styles.ordersList}>
-                        {orders.map(order => (
-                            <TouchableOpacity
-                                key={order.id}
-                                onPress={() => handleSelectOrder(order)}
-                                style={[
-                                    styles.orderCard,
-                                    selectedOrder?.id === order.id && styles.orderCardSelected,
-                                ]}
-                            >
-                                <Text style={styles.orderText}>Commande {order.numero_commande}</Text>
-                                {selectedOrder?.id === order.id && (
-                                    <Text style={styles.selectedIndicator}>✓</Text>
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                        {orders.map(order => {
+                            const orderDate = formatDate(order.date || order.created_at);
+                            
+                            return (
+                                <TouchableOpacity
+                                    key={order.id}
+                                    onPress={() => handleSelectOrder(order, undefined)}
+                                    style={[
+                                        styles.orderCard,
+                                        selectedOrder?.id === order.id && styles.orderCardSelected,
+                                    ]}
+                                >
+                                    <View style={styles.orderInfo}>
+                                    <Text style={styles.orderText}>Commande {order.numero_commande}</Text>
+                                        {orderDate && (
+                                            <Text style={styles.orderDate}>{orderDate}</Text>
+                                        )}
+                                    </View>
+                                    {selectedOrder?.id === order.id && (
+                                        <Text style={styles.selectedIndicator}>✓</Text>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
                     </View>
                 )}
             </View>
@@ -298,21 +425,69 @@ export default function AddClothingScreen() {
                         </View>
                     ) : (
                         <View style={styles.clothesList}>
-                            {clothes.map(clothing => (
+                            {clothes.map(clothing => {
+                                const clothingIdToMatch = Number(clothing.id);
+                                const userVetements = user?.vetements || [];
+                                
+                                let isLinked = false;
+                                
+                                for (const vetement of userVetements) {
+                                    const vetementClothingId = vetement.clothingId != null ? Number(vetement.clothingId) : null;
+                                    const vetementId = vetement.id != null ? Number(vetement.id) : null;
+                                    
+                                    let idMatches = false;
+                                    
+                                    if (vetementClothingId !== null && vetementClothingId === clothingIdToMatch) {
+                                        idMatches = true;
+                                    } else if (vetementClothingId === null && vetementId !== null && vetementId === clothingIdToMatch) {
+                                        idMatches = true;
+                                    }
+                                    
+                                    if (idMatches) {
+                                        const vetementOrderNumber = vetement.numeroCommande || '';
+                                        const orderNumber = selectedOrder?.numero_commande || '';
+                                        const orderMatches = !orderNumber || !vetementOrderNumber || vetementOrderNumber === orderNumber;
+                                        
+                                        if (!orderMatches) {
+                                            continue;
+                                        }
+                                        
+                                        const nfcId = vetement.nfcId;
+                                        const trimmedNfcId = nfcId && typeof nfcId === 'string' ? nfcId.trim() : '';
+                                        const hasValidNfcId = trimmedNfcId !== '' &&
+                                                             trimmedNfcId !== 'undefined' &&
+                                                             trimmedNfcId !== 'null' &&
+                                                             trimmedNfcId.toLowerCase() !== 'none';
+                                        
+                                        if (hasValidNfcId) {
+                                            isLinked = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                return (
                                 <TouchableOpacity
                                     key={clothing.id}
                                     onPress={() => setSelectedClothing(clothing)}
                                     style={[
                                         styles.clothingCard,
                                         selectedClothing?.id === clothing.id && styles.clothingCardSelected,
+                                            isLinked && styles.clothingCardLinked,
                                     ]}
                                 >
+                                        <View style={styles.clothingInfo}>
                                     <Text style={styles.clothingText}>{clothing.name}</Text>
+                                            {isLinked && (
+                                                <Text style={styles.linkedIndicator}>✓ Déjà lié</Text>
+                                            )}
+                                        </View>
                                     {selectedClothing?.id === clothing.id && (
                                         <Text style={styles.selectedIndicator}>✓</Text>
                                     )}
                                 </TouchableOpacity>
-                            ))}
+                                );
+                            })}
                         </View>
                     )}
                 </View>
@@ -362,6 +537,7 @@ const styles = StyleSheet.create({
         marginHorizontal: -20,
         paddingHorizontal: 20,
         minHeight: 400,
+        width: '100%',
     },
     heroHeader: {
         flexDirection: 'row',
@@ -428,10 +604,20 @@ const styles = StyleSheet.create({
         backgroundColor: '#E5E4FF',
         borderColor: COLORS.primaryBlue,
     },
+    orderInfo: {
+        flex: 1,
+        gap: 4,
+    },
     orderText: {
         fontFamily: FONTS.bodyBold,
         color: COLORS.primaryBlue,
         fontSize: 16,
+    },
+    orderDate: {
+        fontFamily: FONTS.body,
+        color: COLORS.textDark,
+        fontSize: 12,
+        opacity: 0.7,
     },
     clothesList: {
         gap: 12,
@@ -450,10 +636,23 @@ const styles = StyleSheet.create({
         backgroundColor: '#E5E4FF',
         borderColor: COLORS.primaryBlue,
     },
+    clothingCardLinked: {
+        opacity: 0.8,
+    },
+    clothingInfo: {
+        flex: 1,
+        gap: 4,
+    },
     clothingText: {
         fontFamily: FONTS.bodyBold,
         color: COLORS.primaryBlue,
         fontSize: 16,
+    },
+    linkedIndicator: {
+        fontFamily: FONTS.body,
+        color: COLORS.textDark,
+        fontSize: 12,
+        opacity: 0.7,
     },
     selectedIndicator: {
         fontSize: 20,

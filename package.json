@@ -6,7 +6,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:ios:dev": "eas build --profile development --platform ios",
+    "build:ios:preview": "eas build --profile preview --platform ios",
+    "dev-client": "expo start --dev-client"
   },
   "dependencies": {
     "@expo-google-fonts/manrope": "^0.4.2",
@@ -21,6 +24,7 @@
     "@types/react": "~19.1.0",
     "axios": "^1.9.0",
     "color-string": "^2.0.1",
+    "dotenv": "^17.2.3",
     "eas-cli": "^16.26.0",
     "expo": "^54.0.13",
     "expo-linear-gradient": "~15.0.7",
@@ -44,7 +48,7 @@
     "@babel/core": "^7.25.2",
     "@types/react": "~19.1.10",
     "@types/react-native": "^0.73.0",
-    "dotenv": "^17.2.3",
+    "baseline-browser-mapping": "^2.9.11",
     "typescript": "~5.9.2"
   },
   "private": true

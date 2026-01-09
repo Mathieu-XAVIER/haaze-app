@@ -1,15 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '../styles/theme';
-import { getUser, getMissions, getSkins, User, Mission, Skin } from '../services/api';
-
-const assets = {
-    logo: 'https://www.figma.com/api/mcp/asset/5a24b7a1-cfaf-419c-8698-3f668cfb4eb0',
-    tshirt1: 'https://www.figma.com/api/mcp/asset/4c2b7748-4d83-462b-87f9-2bad1280c0c5',
-    tshirt2: 'https://www.figma.com/api/mcp/asset/46b4e4c5-1fc8-4fab-8d16-09f46be49fd0',
-    progressFill: 'https://www.figma.com/api/mcp/asset/79ae9a43-82df-42c9-8558-de13d59a2f8c',
-};
+import { getUser, getMissions, getClothes, User, Mission, Vetement } from '../services/api';
+import TShirtTitle from '../components/TShirtTitle';
 
 const formatReward = (mission: Mission): string => {
     if (mission.reward) return mission.reward;
@@ -18,20 +13,29 @@ const formatReward = (mission: Mission): string => {
 
 const MissionCard = ({ mission }: { mission: Mission }) => {
     const ratio = Math.min(mission.progress / mission.total, 1);
+    const progressWidth = ratio * 319;
+    
     return (
         <TouchableOpacity activeOpacity={0.9} style={styles.missionCard}>
             <View style={styles.missionContent}>
                 <View style={styles.missionHeader}>
-                    <Text style={styles.missionTitle}>{mission.title}</Text>
-                    <Text style={styles.missionReward}>{formatReward(mission)}</Text>
+                    <Text style={styles.missionTitle} numberOfLines={2}>
+                        {mission.title}
+                    </Text>
+                    <Text style={styles.missionReward}>
+                        {formatReward(mission)}
+                    </Text>
                 </View>
                 <View style={styles.progressContainer}>
                     <View style={styles.progressTrack}>
-                        <Image
-                            source={{ uri: assets.progressFill }}
-                            style={[styles.progressFillImage, { width: `${ratio * 100}%` }]}
-                            resizeMode="stretch"
-                        />
+                        {progressWidth > 0 && (
+                            <LinearGradient
+                                colors={['#E5E4FF', '#ffffff']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={[styles.progressFillImage, { width: progressWidth }]}
+                            />
+                        )}
                     </View>
                     <Text style={styles.progressLabel}>
                         {mission.progress}/{mission.total}
@@ -43,41 +47,78 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
 };
 
 export default function MissionsScreen() {
+    const { width } = useWindowDimensions();
+    const navigation = useNavigation();
     const [user, setUser] = useState<User | null>(null);
     const [missions, setMissions] = useState<Mission[]>([]);
-    const [skins, setSkins] = useState<Skin[]>([]);
+    const [selectedVetement, setSelectedVetement] = useState<Vetement | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadData();
     }, []);
 
+    useFocusEffect(
+        React.useCallback(() => {
+            loadData();
+        }, [])
+    );
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const [userData, missionsData, skinsData] = await Promise.all([
+            const results = await Promise.allSettled([
                 getUser(),
                 getMissions(),
-                getSkins(),
+                getClothes(),
             ]);
-            setUser(userData);
-            setMissions(missionsData);
-            setSkins(skinsData);
+            if (results[0].status === 'fulfilled') {
+                const userData = results[0].value;
+                if ((!userData.vetements || userData.vetements.length === 0) && results[2]?.status === 'fulfilled') {
+                    const clothes = results[2].value;
+                    if (clothes && clothes.length > 0) {
+                        userData.vetements = clothes;
+                    }
+                }
+                
+                setUser(userData);
+                if (userData.vetements && userData.vetements.length > 0 && !selectedVetement) {
+                    const firstVetementWithImage = userData.vetements.find((v: Vetement) => v.image);
+                    if (firstVetementWithImage) {
+                        setSelectedVetement(firstVetementWithImage);
+                    }
+                }
+            }
+            
+            if (results[1].status === 'fulfilled') {
+                setMissions(results[1].value);
+            } else {
+                setMissions([]);
+            }
         } catch (error) {
-            console.error('[MissionsScreen] Erreur lors du chargement des données:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const getActiveSkin = () => {
-        return skins.find(s => s.active) || skins[0];
+    const getProgressPercentage = () => {
+        if (!user || !user.xp || !user.xpForNextLevel) return 0;
+        const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
+        const percentage = (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+        return Math.min(Math.max(percentage, 0), 100);
     };
 
-    const getProgressPercentage = () => {
-        if (!user || !user.xp || !user.xpForNextLevel) return 34;
-        const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
-        return (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+    const getOrderedVetements = (): Vetement[] => {
+        if (!user?.vetements || user.vetements.length === 0) return [];
+        return user.vetements.filter(v => v.image);
+    };
+
+    const getFilteredMissions = (): Mission[] => {
+        if (!selectedVetement) return missions;
+        return missions.filter(mission => {
+            const missionVetementId = (mission as any).vetement_id || (mission as any).clothing_id;
+            return missionVetementId === selectedVetement.id;
+        });
     };
 
     if (loading) {
@@ -88,17 +129,17 @@ export default function MissionsScreen() {
         );
     }
 
-    const activeSkin = getActiveSkin();
-    const displaySkins = skins.slice(0, 3);
-    const hasMoreSkins = skins.length > 3;
+    const orderedVetements = getOrderedVetements();
+    const filteredMissions = getFilteredMissions();
+    const displayVetements = orderedVetements.slice(0, 3);
 
     return (
         <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <LinearGradient
-                colors={['#CFCEFB', '#f5f4ff', COLORS.backgroundLight]}
+                colors={['#CFCEFB', 'rgba(255, 255, 255, 0)']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                locations={[0, 0.5, 1]}
+                locations={[0, 0.89]}
                 style={styles.heroSection}
             >
                 <View style={styles.heroHeader}>
@@ -107,91 +148,96 @@ export default function MissionsScreen() {
                         style={styles.heroLogo}
                         tintColor={COLORS.textDark}
                     />
-                    <Text style={styles.heroTitle}>{user?.name || 'Je suis le pseudo'}</Text>
+                    {user?.name && (
+                        <Text style={styles.heroTitle}>{user.name}</Text>
+                    )}
                 </View>
 
                 <View style={styles.skinsRow}>
-                    {displaySkins.map(skin => (
-                        <View
-                            key={skin.id}
+                    {displayVetements.filter(v => v.image).map(vetement => (
+                        <TouchableOpacity
+                            key={vetement.id}
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedVetement(vetement)}
                             style={[
                                 styles.skinBubble,
-                                skin.active && styles.skinBubbleActive,
+                                selectedVetement?.id === vetement.id && styles.skinBubbleActive,
                             ]}
                         >
-                            {skin.image ? (
-                                <Image source={{ uri: skin.image }} style={styles.skinImage} resizeMode="contain" />
-                            ) : (
-                                <Text style={styles.addSymbol}>+</Text>
-                            )}
-                        </View>
+                            <Image 
+                                source={{ uri: vetement.image! }} 
+                                style={styles.skinImage} 
+                                resizeMode="contain"
+                            />
+                        </TouchableOpacity>
                     ))}
-                    {hasMoreSkins && (
-                        <View style={[styles.skinBubble, styles.skinBubbleEmpty]}>
-                            <Text style={styles.addSymbol}>+</Text>
-                        </View>
-                    )}
-                </View>
-            </LinearGradient>
-
-            <View style={styles.sectionContainer}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>T-SHIRT HAAZE #1</Text>
-                    <View style={styles.sectionUnderline} />
-                </View>
-
-                <View style={styles.missionsList}>
-                    {missions.length > 0 ? (
-                        missions.map(mission => (
-                            <MissionCard key={mission.id} mission={mission} />
-                        ))
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyStateText}>Aucune mission disponible</Text>
-                        </View>
-                    )}
-                </View>
-
-                <View style={styles.missionsButtonContainer}>
-                    <TouchableOpacity activeOpacity={0.8} style={styles.missionsButton}>
-                        <Text style={styles.missionsButtonText}>Voir toutes les missions</Text>
+                    <TouchableOpacity 
+                        activeOpacity={0.8} 
+                        style={styles.skinBubble}
+                        onPress={() => navigation.navigate('AddClothing' as never)}
+                    >
+                        <Text style={styles.addSymbol}>+</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
-
-            <View style={styles.heroFooter}>
-                <View style={styles.tshirtContainer}>
-                    <Image
-                        source={activeSkin?.image ? { uri: activeSkin.image } : { uri: assets.tshirt1 }}
-                        style={styles.heroImage}
-                        resizeMode="contain"
-                    />
-                </View>
-                <View style={styles.levelInfo}>
-                    <Text style={styles.tshirtTitle}>{activeSkin?.name || 'T-shirt HAAZE #1'}</Text>
-                    <View style={styles.progressBarContainer}>
-                        <LinearGradient
-                            colors={['#6740ff', '#3300fd']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            style={[styles.progressBarFill, { width: `${getProgressPercentage()}%` }]}
-                        />
-                        <View style={styles.progressBarTrack} />
-                    </View>
-                    <View style={styles.levelLabels}>
-                        <Text style={styles.levelLabel}>Lv.{user?.level || 1}</Text>
-                        <Text style={styles.levelLabel}>Lv.{(user?.level || 1) + 1}</Text>
-                    </View>
-                    <View style={styles.buttonRow}>
-                        <TouchableOpacity activeOpacity={0.8} style={styles.heroButton}>
-                            <Text style={styles.heroButtonText}>Tester le skin</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity activeOpacity={0.8} style={styles.heroButtonDark}>
-                            <Text style={styles.heroButtonTextDark}>Voir tous les skins</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </View>
+                {selectedVetement?.nom && (
+                    <>
+                        <View style={styles.tshirtTitleContainer}>
+                            <View style={styles.sectionHeader}>
+                                <View style={styles.sectionTitleContainer}>
+                                    <Text style={styles.sectionTitle}>{selectedVetement.nom.toUpperCase()}</Text>
+                                    <View style={styles.sectionUnderline} />
+                                </View>
+                            </View>
+                        </View>
+                        <View style={styles.missionsList}>
+                            {filteredMissions.length > 0 ? (
+                                filteredMissions.map(mission => (
+                                    <MissionCard key={mission.id} mission={mission} />
+                                ))
+                            ) : (
+                                <View style={styles.emptyState}>
+                                    <Text style={styles.emptyStateText}>Aucune mission</Text>
+                                </View>
+                            )}
+                        </View>
+                        {selectedVetement?.image && (
+                            <View style={styles.heroFooter}>
+                                <View style={styles.tshirtContainer}>
+                                    <Image
+                                        source={{ uri: selectedVetement.image }}
+                                        style={styles.heroImage}
+                                        resizeMode="contain"
+                                    />
+                                </View>
+                                <View style={styles.levelInfo}>
+                                    <Text style={styles.tshirtTitle}>{selectedVetement.nom}</Text>
+                                    <View style={styles.progressBarContainer}>
+                                        <LinearGradient
+                                            colors={['#6740ff', '#3300fd']}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 0 }}
+                                            style={[styles.progressBarFill, { width: `${getProgressPercentage()}%` }]}
+                                        />
+                                        <View style={styles.progressBarTrack} />
+                                    </View>
+                                    <View style={styles.levelLabels}>
+                                        <Text style={styles.levelLabel}>Lv.{user?.level || 1}</Text>
+                                        <Text style={styles.levelLabel}>Lv.{(user?.level || 1) + 1}</Text>
+                                    </View>
+                                    <View style={styles.buttonRow}>
+                                        <TouchableOpacity activeOpacity={0.8} style={styles.heroButton}>
+                                            <Text style={styles.heroButtonText}>Tester le skin</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity activeOpacity={0.8} style={styles.heroButtonDark}>
+                                            <Text style={styles.heroButtonTextDark}>Voir tous les skins</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                    </>
+                )}
+            </LinearGradient>
         </ScrollView>
     );
 }
@@ -204,38 +250,59 @@ const styles = StyleSheet.create({
     content: {
         paddingHorizontal: 20,
         paddingBottom: 120,
-        paddingTop: 40,
+        paddingTop: 0,
     },
     heroSection: {
-        marginBottom: 30,
+        marginBottom: 0,
         paddingVertical: 20,
-        paddingTop: 30,
-        paddingBottom: 30,
+        paddingTop: 55,
+        paddingBottom: 0,
         marginHorizontal: -20,
         paddingHorizontal: 20,
-        minHeight: 400,
+        minHeight: 444,
+        alignItems: 'center',
+        overflow: 'hidden',
+        width: '100%',
     },
     heroHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 10,
+        marginBottom: 32,
+        paddingHorizontal: 16,
+        gap: 12,
     },
     heroLogo: {
-        width: 42,
-        height: 42,
-        marginRight: 12,
+        width: 48,
+        height: 52,
     },
     heroTitle: {
-        fontSize: 20,
-        fontFamily: FONTS.title,
+        fontSize: 16,
+        fontFamily: FONTS.bodyBold,
         color: COLORS.textDark,
-        textTransform: 'uppercase',
+        fontWeight: '800',
+        letterSpacing: 0.8,
     },
     skinsRow: {
         flexDirection: 'row',
         gap: 16,
         alignItems: 'center',
+        justifyContent: 'flex-start',
+        paddingLeft: 0,
+        alignSelf: 'flex-start',
+        width: '100%',
+    },
+    tshirtTitleContainer: {
+        alignSelf: 'flex-start',
+        marginTop: 32,
+        paddingTop: 0,
+        width: '100%',
+    },
+    missionsList: {
+        gap: 8,
+        width: '100%',
+        marginTop: 16,
+        alignSelf: 'flex-start',
     },
     skinBubble: {
         width: 50,
@@ -267,49 +334,57 @@ const styles = StyleSheet.create({
     skinImage: {
         width: 25,
         height: 27,
+        backgroundColor: 'transparent',
     },
     addSymbol: {
         fontSize: 24,
         color: '#3300fd',
-        fontFamily: 'Minasans',
+        fontFamily: 'Minasans-Regular',
+        fontWeight: '400',
     },
     sectionContainer: {
-        paddingHorizontal: 13,
-        marginTop: 32,
+        paddingHorizontal: 0,
+        marginTop: 0,
         gap: 16,
+        width: 365,
+        alignSelf: 'center',
     },
     sectionHeader: {
-        marginBottom: 16,
+        marginBottom: 0,
+        marginTop: 0,
+    },
+    sectionTitleContainer: {
+        alignSelf: 'flex-start',
     },
     sectionTitle: {
         fontSize: 24,
         fontFamily: FONTS.title,
         color: COLORS.primaryBlue,
-        textTransform: 'uppercase',
-        marginBottom: 20,
+        letterSpacing: 1,
+        lineHeight: 28,
     },
     sectionUnderline: {
-        height: 9,
-        borderRadius: 33,
+        height: 6,
+        borderRadius: 10,
         backgroundColor: COLORS.accentYellow,
-        width: 261,
         marginTop: -2,
-    },
-    missionsList: {
-        gap: 8,
+        alignSelf: 'stretch',
     },
     missionCard: {
         backgroundColor: '#8173FF',
         borderRadius: 5,
         padding: 12,
+        width: '100%',
     },
     missionContent: {
         gap: 10,
+        width: '100%',
     },
     missionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
+        width: '100%',
     },
     missionTitle: {
         fontFamily: FONTS.bodyBold,
@@ -318,14 +393,16 @@ const styles = StyleSheet.create({
         letterSpacing: 0.6,
         flex: 1,
         marginRight: 12,
+        fontWeight: '700',
     },
     missionReward: {
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         color: '#ffffff',
         letterSpacing: 0.6,
-        minWidth: 76,
+        minWidth: 76.333,
         textAlign: 'center',
+        fontWeight: '800',
     },
     progressContainer: {
         position: 'relative',
@@ -333,6 +410,7 @@ const styles = StyleSheet.create({
         height: 14,
         alignItems: 'center',
         justifyContent: 'center',
+        alignSelf: 'center',
     },
     progressTrack: {
         position: 'absolute',
@@ -357,10 +435,14 @@ const styles = StyleSheet.create({
         color: '#130077',
         letterSpacing: 0.4,
         zIndex: 1,
+        fontWeight: '600',
+        left: 154,
+        top: 1,
     },
     missionsButtonContainer: {
         alignItems: 'center',
         marginTop: 16,
+        width: '100%',
     },
     missionsButton: {
         width: 310,
@@ -386,45 +468,62 @@ const styles = StyleSheet.create({
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         letterSpacing: 0.6,
+        fontWeight: '700',
+        width: 230,
+        textAlign: 'center',
     },
     heroFooter: {
         flexDirection: 'row',
         gap: 16,
-        paddingHorizontal: 13,
-        marginTop: 32,
+        paddingHorizontal: 0,
+        marginTop: 16,
         alignItems: 'flex-start',
+        width: '100%',
+        maxWidth: '100%',
+        alignSelf: 'flex-start',
     },
     tshirtContainer: {
         width: 147,
         height: 163,
+        flexShrink: 0,
     },
     heroImage: {
         width: 147,
         height: 163,
+        backgroundColor: 'transparent',
     },
     levelInfo: {
         flex: 1,
-        gap: 8,
+        height: 163,
+        gap: 0,
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
+        minWidth: 0,
+        flexShrink: 1,
+        paddingRight: 0,
     },
     tshirtTitle: {
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         color: '#1e1e1e',
         letterSpacing: 0.6,
-        marginBottom: 20,
-        alignSelf: 'center',
+        marginBottom: 8,
+        marginTop: 0,
+        textAlign: 'left',
+        fontWeight: '700',
+        alignSelf: 'flex-start',
     },
     progressBarContainer: {
-        width: 271,
+        width: '100%',
+        maxWidth: 200,
         height: 12,
         position: 'relative',
-        marginBottom: 35,
+        marginBottom: 4,
+        alignSelf: 'flex-start',
     },
     progressBarTrack: {
         position: 'absolute',
-        width: 271,
+        width: '100%',
         height: 12,
         borderWidth: 1,
         borderColor: '#6740ff',
@@ -440,24 +539,29 @@ const styles = StyleSheet.create({
     levelLabels: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: 271,
-        position: 'absolute',
-        top: 35,
+        width: '100%',
+        maxWidth: 200,
+        alignSelf: 'flex-start',
+        marginBottom: 8,
+        marginTop: 0,
     },
     levelLabel: {
         fontFamily: FONTS.body,
         fontSize: 7,
         color: '#1e1e1e',
+        fontWeight: '400',
     },
     buttonRow: {
         flexDirection: 'column',
         gap: 12,
         width: '100%',
-        marginTop: 12,
-        alignItems: 'center',
+        marginTop: 'auto',
+        alignItems: 'flex-start',
+        maxWidth: 173,
     },
     heroButton: {
         width: 172,
+        maxWidth: '100%',
         paddingVertical: 15,
         borderRadius: 5,
         backgroundColor: COLORS.primaryBlue,
@@ -476,19 +580,40 @@ const styles = StyleSheet.create({
     },
     heroButtonDark: {
         width: 173,
+        maxWidth: '100%',
+        paddingVertical: 15,
+        borderRadius: 5,
         backgroundColor: '#1e1e1e',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Platform.select({
+            web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04)' },
+            default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.04,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 12,
+                elevation: 2,
+            },
+        }),
     },
     heroButtonText: {
         color: '#ffffff',
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         letterSpacing: 0.6,
+        fontWeight: '700',
+        width: 141,
+        textAlign: 'center',
     },
     heroButtonTextDark: {
         color: '#ffffff',
         fontFamily: FONTS.bodyBold,
         fontSize: 12,
         letterSpacing: 0.6,
+        fontWeight: '700',
+        width: 141,
+        textAlign: 'center',
     },
     loadingContainer: {
         justifyContent: 'center',

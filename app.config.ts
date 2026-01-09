@@ -2,7 +2,12 @@ import { ConfigContext, ExpoConfig } from '@expo/config';
 import 'dotenv/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api';
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL ?? 'https://haaze.mathieu-xavier.fr/api';
+    
+    if (process.env.NODE_ENV === 'development') {
+        console.log('[Config] EXPO_PUBLIC_API_URL from env:', process.env.EXPO_PUBLIC_API_URL);
+        console.log('[Config] Final apiUrl:', apiUrl);
+    }
 
     return {
         ...config,
@@ -18,8 +23,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             resizeMode: 'contain',
             backgroundColor: '#ffffff',
         },
+        plugins: [
+            './plugins/withNfc.js',
+        ],
         ios: {
             supportsTablet: true,
+            infoPlist: {
+                NFCReaderUsageDescription: 'Cette application utilise le NFC pour scanner et lier vos vêtements à votre compte.',
+            },
+            bundleIdentifier: 'com.anonymous.haaze',
         },
         android: {
             adaptiveIcon: {

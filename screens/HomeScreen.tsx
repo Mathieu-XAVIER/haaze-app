@@ -10,10 +10,12 @@ import {
     ImageSourcePropType,
     Platform,
     ActivityIndicator,
+    useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgUri } from 'react-native-svg';
 import { Asset } from 'expo-asset';
+import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, FONTS } from '../styles/theme';
 import { getUser, getMissions, getCollections, Mission, Collection, User } from '../services/api';
 
@@ -124,6 +126,7 @@ const CollectionCard = ({ collection }: { collection: { id: string; title: strin
 );
 
 export default function HomeScreen() {
+    const { width } = useWindowDimensions();
     const changeIconUri = changeOutfitIcon?.uri;
     const [user, setUser] = useState<User | null>(null);
     const [missions, setMissions] = useState<Mission[]>([]);
@@ -134,28 +137,56 @@ export default function HomeScreen() {
         loadData();
     }, []);
 
+    // Rafraîchir les données quand on revient sur la page
+    useFocusEffect(
+        React.useCallback(() => {
+            loadData();
+        }, [])
+    );
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const [userData, missionsData, collectionsData] = await Promise.all([
+            // Charger les données en parallèle, mais gérer les erreurs individuellement
+            const results = await Promise.allSettled([
                 getUser(),
                 getMissions(),
                 getCollections(),
             ]);
-            setUser(userData);
-            setMissions(missionsData.slice(0, 3)); // Limiter à 3 missions pour l'écran d'accueil
-            setCollections(collectionsData.filter(c => c.coming_soon).slice(0, 2)); // Collections à venir
+            
+            // Traiter les résultats
+            if (results[0].status === 'fulfilled') {
+                setUser(results[0].value);
+            } else {
+                console.error('[HomeScreen] Erreur lors du chargement de l\'utilisateur:', results[0].reason);
+            }
+            
+            if (results[1].status === 'fulfilled') {
+                setMissions(results[1].value.slice(0, 3)); // Limiter à 3 missions pour l'écran d'accueil
+            } else {
+                console.error('[HomeScreen] Erreur lors du chargement des missions:', results[1].reason);
+                setMissions([]);
+            }
+            
+            if (results[2].status === 'fulfilled') {
+                setCollections(results[2].value.filter(c => c.coming_soon).slice(0, 2)); // Collections à venir
+            } else {
+                console.error('[HomeScreen] Erreur lors du chargement des collections:', results[2].reason);
+                setCollections([]);
+            }
         } catch (error) {
-            console.error('[HomeScreen] Erreur lors du chargement des données:', error);
+            console.error('[HomeScreen] Erreur inattendue lors du chargement des données:', error);
         } finally {
             setLoading(false);
         }
     };
 
     const getProgressPercentage = () => {
-        if (!user || !user.xp || !user.xpForNextLevel) return 55;
+        if (!user || !user.xp || !user.xpForNextLevel) return 0;
+        // Calculer le XP du niveau actuel (reste après avoir soustrait les niveaux précédents)
         const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
-        return (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+        const percentage = (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
+        return Math.min(Math.max(percentage, 0), 100); // S'assurer que c'est entre 0 et 100
     };
 
     const getCurrentLevel = () => {
@@ -280,6 +311,7 @@ const styles = StyleSheet.create({
         marginHorizontal: -20,
         paddingHorizontal: 20,
         minHeight: 400,
+        width: '100%',
     },
     heroHeader: {
         flexDirection: 'row',
@@ -300,8 +332,10 @@ const styles = StyleSheet.create({
     },
     heroImage: {
         width: '100%',
+        maxWidth: '100%',
         height: 280,
         marginVertical: 20,
+        alignSelf: 'center',
     },
     skinLabelRow: {
         flexDirection: 'row',

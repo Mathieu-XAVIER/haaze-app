@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect } from '@react-navigation/native';
 import { getUser, logout, getUserStats, User, UserStats } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
@@ -28,14 +29,33 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
         loadData();
     }, []);
 
+    // Rafraîchir les données quand on revient sur la page
+    useFocusEffect(
+        React.useCallback(() => {
+            loadData();
+        }, [])
+    );
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const [userData, statsData] = await Promise.all([getUser(), getUserStats()]);
-            setUser(userData);
-            setStats(statsData);
+            // Charger les données en parallèle, mais gérer les erreurs individuellement
+            const results = await Promise.allSettled([getUser(), getUserStats()]);
+            
+            // Traiter les résultats
+            if (results[0].status === 'fulfilled') {
+                setUser(results[0].value);
+            } else {
+                console.error('[ProfileScreen] Erreur lors du chargement de l\'utilisateur:', results[0].reason);
+            }
+            
+            if (results[1].status === 'fulfilled') {
+                setStats(results[1].value);
+            } else {
+                console.error('[ProfileScreen] Erreur lors du chargement des stats:', results[1].reason);
+            }
         } catch (error) {
-            console.error('[ProfileScreen] Erreur lors du chargement des données:', error);
+            console.error('[ProfileScreen] Erreur inattendue lors du chargement des données:', error);
         } finally {
             setLoading(false);
         }
