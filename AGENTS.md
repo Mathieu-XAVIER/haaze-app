@@ -174,6 +174,46 @@ Les URLs d'images de l'API peuvent avoir différents formats. La fonction `norma
 - L'application bloque le rendu jusqu'au chargement des polices
 - En cas d'erreur, un warning `[Fonts]` apparaît dans la console
 
+## Projet API Laravel associé
+
+Cette application mobile dépend d'une API Laravel backend :
+- **Dépôt**: https://github.com/Mathieu-XAVIER/lara-haaze
+- **URL de production**: `https://haaze.mathieu-xavier.fr/api`
+
+### Intégration du contexte Laravel
+
+Pour permettre aux agents IA de comprendre la logique complète, clonez le dépôt Laravel dans ce workspace :
+
+```bash
+# Option 1 : Submodule Git
+git submodule add https://github.com/Mathieu-XAVIER/lara-haaze.git api
+
+# Option 2 : Clone simple (sans historique git lié)
+git clone https://github.com/Mathieu-XAVIER/lara-haaze.git api
+echo "api/" >> .gitignore
+```
+
+Une fois cloné, les agents pourront explorer :
+- `api/routes/api.php` - Définition des routes API
+- `api/app/Http/Controllers/` - Logique des endpoints
+- `api/app/Models/` - Modèles Eloquent et relations
+- `api/database/migrations/` - Structure de la base de données
+
+### Structure attendue de l'API
+
+| Modèle | Description |
+|--------|-------------|
+| `User` | Utilisateur avec niveau, XP, vêtements |
+| `Clothing` | Vêtement du catalogue |
+| `UserClothing` | Pivot user-clothing avec NFC |
+| `Mission` | Mission avec progression |
+| `Collection` | Collection de vêtements |
+| `Skin` | Skin personnalisable |
+| `Order` | Commande contenant des vêtements |
+| `NfcTag` | Tag NFC lié à un vêtement |
+
+---
+
 ## Bonnes pratiques
 
 1. **Toujours utiliser le thème** pour les couleurs et polices
