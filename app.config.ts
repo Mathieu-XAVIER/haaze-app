@@ -25,13 +25,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
         plugins: [
             './plugins/withNfc.js',
+            './plugins/withAndroidProviders.js',
         ],
         ios: {
             supportsTablet: true,
             infoPlist: {
                 NFCReaderUsageDescription: 'Cette application utilise le NFC pour scanner et lier vos vêtements à votre compte.',
             },
-            bundleIdentifier: 'com.anonymous.haaze',
+            bundleIdentifier: 'fr.mathieuxavier.haaze',
         },
         android: {
             adaptiveIcon: {
@@ -39,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 backgroundColor: '#ffffff',
             },
             edgeToEdgeEnabled: true,
-            package: 'com.anonymous.haaze',
+            package: 'fr.mathieuxavier.haaze',
         },
         web: {
             favicon: './assets/favicon.png',
@@ -53,4 +54,3 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         },
     };
 };
-
