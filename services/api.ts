@@ -316,6 +316,67 @@ export interface UserStats {
     skins_count: number;
 }
 
+// Types pour les commandes et liaison NFC
+export interface OrderClothing {
+    id: number;
+    clothing_id: number;
+    quantity: number;
+    price: number;
+    linked_count: number;
+    clothing: {
+        id: number;
+        name: string;
+        description?: string;
+        image_url?: string;
+        brand?: { id: number; name: string };
+        collection?: { id: number; name: string };
+    };
+}
+
+export interface OrderWithItems {
+    id: number;
+    order_number: string;
+    created_at: string;
+    items: OrderClothing[];
+    total_items: number;
+    total_linked: number;
+}
+
+export interface UnlinkedClothing {
+    id: number;
+    clothing_id: number;
+    quantity: number;
+    linked_count: number;
+    remaining: number;
+    clothing: {
+        id: number;
+        name: string;
+        description?: string;
+        image_url?: string;
+        brand?: { id: number; name: string };
+    };
+}
+
+export interface NfcLinkResult {
+    success: boolean;
+    message: string;
+    remaining: number;
+    error_code?: string;
+}
+
+export type NfcErrorCode = 
+    | 'NFC_ALREADY_LINKED'
+    | 'ALL_ITEMS_LINKED'
+    | 'CLOTHING_NOT_IN_ORDER'
+    | 'ORDER_NOT_OWNED';
+
+export const NFC_ERROR_MESSAGES: Record<NfcErrorCode, string> = {
+    'NFC_ALREADY_LINKED': 'Ce tag NFC est déjà lié à un autre vêtement',
+    'ALL_ITEMS_LINKED': 'Tous les exemplaires de ce vêtement sont déjà liés',
+    'CLOTHING_NOT_IN_ORDER': 'Ce vêtement n\'appartient pas à cette commande',
+    'ORDER_NOT_OWNED': 'Cette commande ne vous appartient pas',
+};
+
 export async function getMissions(): Promise<Mission[]> {
     try {
         const response = await api.get('/missions');
@@ -579,5 +640,135 @@ export async function linkClothing(clothingId: number, nfcId: string): Promise<V
         };
     } catch (error) {
         throw error;
+    }
+}
+
+// =====================================================
+// Endpoints pour les commandes et liaison NFC
+// =====================================================
+
+/**
+ * Récupère la liste des commandes de l'utilisateur avec statut de liaison
+ */
+export async function getOrders(): Promise<OrderWithItems[]> {
+    try {
+        const response = await api.get('/orders');
+        const data = response.data.data || response.data || [];
+        
+        return Array.isArray(data) ? data.map((order: any) => ({
+            id: order.id,
+            order_number: order.order_number || order.numero_commande || '',
+            created_at: order.created_at || order.date || '',
+            items: (order.items || order.order_items || []).map((item: any) => ({
+                id: item.id,
+                clothing_id: item.clothing_id,
+                quantity: item.quantity || 1,
+                price: item.price || 0,
+                linked_count: item.linked_count || 0,
+                clothing: {
+                    id: item.clothing?.id || item.clothing_id,
+                    name: item.clothing?.name || item.clothing?.nom || '',
+                    description: item.clothing?.description,
+                    image_url: normalizeImageUrl(
+                        item.clothing?.image_url || 
+                        item.clothing?.image || 
+                        item.clothing?.media?.[0]?.original_url
+                    ),
+                    brand: item.clothing?.brand,
+                    collection: item.clothing?.collection,
+                },
+            })),
+            total_items: order.total_items ?? (order.items || order.order_items || []).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0),
+            total_linked: order.total_linked ?? (order.items || order.order_items || []).reduce((sum: number, item: any) => sum + (item.linked_count || 0), 0),
+        })) : [];
+    } catch (error) {
+        console.error('[API] Erreur getOrders:', error);
+        return [];
+    }
+}
+
+/**
+ * Récupère les vêtements restants à lier pour une commande
+ */
+export async function getUnlinkedClothes(orderId: number): Promise<UnlinkedClothing[]> {
+    try {
+        const response = await api.get(`/orders/${orderId}/unlinked-clothes`);
+        const data = response.data.data || response.data || [];
+        
+        return Array.isArray(data) ? data.map((item: any) => ({
+            id: item.id,
+            clothing_id: item.clothing_id,
+            quantity: item.quantity || 1,
+            linked_count: item.linked_count || 0,
+            remaining: item.remaining ?? ((item.quantity || 1) - (item.linked_count || 0)),
+            clothing: {
+                id: item.clothing?.id || item.clothing_id,
+                name: item.clothing?.name || item.clothing?.nom || '',
+                description: item.clothing?.description,
+                image_url: normalizeImageUrl(
+                    item.clothing?.image_url || 
+                    item.clothing?.image || 
+                    item.clothing?.media?.[0]?.original_url
+                ),
+                brand: item.clothing?.brand,
+            },
+        })).filter((item: UnlinkedClothing) => item.remaining > 0) : [];
+    } catch (error) {
+        console.error('[API] Erreur getUnlinkedClothes:', error);
+        return [];
+    }
+}
+
+/**
+ * Lie un vêtement à un tag NFC via une commande
+ */
+export async function scanNfcForOrder(
+    orderId: number, 
+    clothingId: number, 
+    nfcId: string
+): Promise<NfcLinkResult> {
+    try {
+        const response = await api.post(`/orders/${orderId}/scan-nfc`, {
+            clothing_id: clothingId,
+            nfc_id: nfcId,
+        });
+        
+        const data = response.data.data || response.data;
+        return {
+            success: true,
+            message: data.message || 'Vêtement lié avec succès !',
+            remaining: data.remaining ?? 0,
+        };
+    } catch (error: any) {
+        const errorData = error.response?.data;
+        const errorCode = errorData?.error_code || errorData?.code;
+        const errorMessage = errorData?.message || 'Une erreur est survenue';
+        
+        // Traduire le message d'erreur si c'est un code connu
+        const translatedMessage = errorCode && NFC_ERROR_MESSAGES[errorCode as NfcErrorCode]
+            ? NFC_ERROR_MESSAGES[errorCode as NfcErrorCode]
+            : errorMessage;
+        
+        return {
+            success: false,
+            message: translatedMessage,
+            remaining: -1,
+            error_code: errorCode,
+        };
+    }
+}
+
+/**
+ * Vérifie si un tag NFC est déjà lié
+ */
+export async function checkNfcStatus(nfcId: string): Promise<{ isLinked: boolean; clothing?: Vetement }> {
+    try {
+        const clothing = await checkNfc(nfcId);
+        return {
+            isLinked: clothing !== null,
+            clothing: clothing || undefined,
+        };
+    } catch (error) {
+        return { isLinked: false };
     }
 }

@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { getUser, logout, getUserStats, User, UserStats } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
+
+type NavigationProp = NativeStackNavigationProp<{
+    Orders: undefined;
+}>;
 
 const assets = {
     background: 'https://www.figma.com/api/mcp/asset/4eea6cce-fa6f-4789-889e-fd82d9276671',
@@ -21,6 +27,7 @@ type SectionProps = {
 };
 
 export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
+    const navigation = useNavigation<NavigationProp>();
     const [user, setUser] = useState<User | null>(null);
     const [stats, setStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
@@ -148,6 +155,25 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                 <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
                 <Text style={styles.subtitle}>{formatDate()}</Text>
             </View>
+
+            <Section title="MES COMMANDES" underlineWidth={180}>
+                <TouchableOpacity
+                    style={styles.ordersCard}
+                    onPress={() => navigation.navigate('Orders')}
+                    activeOpacity={0.8}
+                >
+                    <View style={styles.ordersCardContent}>
+                        <View style={styles.ordersIconContainer}>
+                            <Ionicons name="receipt-outline" size={24} color={COLORS.primaryBlue} />
+                        </View>
+                        <View style={styles.ordersTextContainer}>
+                            <Text style={styles.ordersTitle}>Gérer mes commandes</Text>
+                            <Text style={styles.ordersSubtitle}>Lier mes vêtements via NFC</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={24} color={COLORS.primaryBlue} />
+                    </View>
+                </TouchableOpacity>
+            </Section>
 
             <Section title="STATISTIQUES" underlineWidth={150}>
                 {derivedStats.map(stat => (
@@ -329,5 +355,50 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         flex: 1,
+    },
+    ordersCard: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: COLORS.primaryBlue,
+        overflow: 'hidden',
+        ...Platform.select({
+            web: { boxShadow: '0px 4px 12px rgba(51, 0, 253, 0.15)' },
+            default: {
+                shadowColor: COLORS.primaryBlue,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 12,
+                elevation: 4,
+            },
+        }),
+    },
+    ordersCardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+    },
+    ordersIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#E5E4FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 14,
+    },
+    ordersTextContainer: {
+        flex: 1,
+    },
+    ordersTitle: {
+        fontSize: 16,
+        fontFamily: FONTS.bodyBold,
+        color: COLORS.textDark,
+        marginBottom: 2,
+    },
+    ordersSubtitle: {
+        fontSize: 13,
+        fontFamily: FONTS.body,
+        color: '#666',
     },
 });

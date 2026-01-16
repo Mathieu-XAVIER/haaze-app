@@ -38,7 +38,10 @@ Instructions pour les agents IA travaillant sur ce projet.
 │   ├── LoginScreen.tsx
 │   ├── ScanScreen.tsx
 │   ├── AddClothingScreen.tsx
-│   └── LinkClothingScreen.tsx
+│   ├── LinkClothingScreen.tsx
+│   ├── OrdersScreen.tsx      # Liste des commandes
+│   ├── OrderDetailScreen.tsx # Détail commande / sélection vêtement
+│   └── NFCLinkScreen.tsx     # Scan NFC pour liaison
 ├── navigation/             # Configuration de la navigation
 │   └── BottomTabs.tsx
 ├── services/               # Logique API et services
@@ -140,8 +143,20 @@ npm run dev-client
 | `/clothes/{id}` | GET | Détails d'un vêtement |
 | `/nfc/check/{nfcId}` | GET | Vérifier un tag NFC |
 | `/clothes/link` | POST | Lier un vêtement via NFC |
+| `/orders` | GET | Liste des commandes avec statut de liaison |
+| `/orders/{id}/unlinked-clothes` | GET | Vêtements restants à lier pour une commande |
+| `/orders/{id}/scan-nfc` | POST | Lier un vêtement via NFC (body: clothing_id, nfc_id) |
 | `/orders/lookup` | POST | Rechercher une commande |
 | `/orders/{id}/link-clothes` | POST | Lier les vêtements d'une commande |
+
+### Codes d'erreur NFC
+
+| Code | Message |
+|------|---------|
+| `NFC_ALREADY_LINKED` | Ce tag NFC est déjà lié à un autre vêtement |
+| `ALL_ITEMS_LINKED` | Tous les exemplaires de ce vêtement sont déjà liés |
+| `CLOTHING_NOT_IN_ORDER` | Ce vêtement n'appartient pas à cette commande |
+| `ORDER_NOT_OWNED` | Cette commande ne vous appartient pas |
 
 ## Authentification
 
@@ -167,6 +182,22 @@ Les URLs d'images de l'API peuvent avoir différents formats. La fonction `norma
 - Plugin personnalisé dans `plugins/withNfc.js`
 - Permissions configurées dans `app.config.ts` (iOS: `NFCReaderUsageDescription`)
 - Utilise `react-native-nfc-manager` pour la lecture des tags
+- Import conditionnel pour supporter Expo Go (simulation en dev)
+
+### Fonctionnalité de liaison NFC des commandes
+
+Flow utilisateur pour lier les vêtements :
+
+1. **OrdersScreen** (`screens/OrdersScreen.tsx`) : Liste des commandes avec progression
+2. **OrderDetailScreen** (`screens/OrderDetailScreen.tsx`) : Sélection du vêtement à lier
+3. **NFCLinkScreen** (`screens/NFCLinkScreen.tsx`) : Scan NFC avec animation
+
+Accès depuis le **ProfileScreen** via le bouton "Gérer mes commandes".
+
+Types clés dans `services/api.ts` :
+- `OrderWithItems` : Commande avec items et statut de liaison
+- `UnlinkedClothing` : Vêtement avec `remaining` items à lier
+- `NfcLinkResult` : Résultat du scan NFC (success, message, remaining)
 
 ### Polices personnalisées
 
