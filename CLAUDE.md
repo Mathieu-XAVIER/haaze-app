@@ -108,3 +108,77 @@ Laravel API at https://github.com/Mathieu-XAVIER/lara-haaze
 Production: `https://haaze.mathieu-xavier.fr/api`
 
 See `AGENTS.md` for detailed French documentation and data models.
+
+### Backend Specification Rule
+
+**IMPORTANT:** Lorsque vous identifiez une fonctionnalité, route API, ou donnée manquante dans le backend Laravel, vous DEVEZ créer un fichier de spécification dans le dossier `.backend-specs/` avec le format suivant:
+
+**Nom du fichier:** `.backend-specs/YYYY-MM-DD-nom-fonctionnalite.md`
+
+**Structure du fichier:**
+```markdown
+# [Titre de la fonctionnalité]
+
+**Date:** YYYY-MM-DD
+**Priorité:** [Haute/Moyenne/Basse]
+**Impact:** [Description de l'impact sur l'app mobile]
+
+## Contexte
+
+[Expliquer pourquoi cette fonctionnalité est nécessaire et dans quel contexte elle sera utilisée dans l'app mobile]
+
+## Route(s) API attendue(s)
+
+### [Méthode HTTP] /api/endpoint
+
+**Description:** [À quoi sert cette route]
+
+**Headers:**
+- `Authorization: Bearer {token}`
+- `Content-Type: application/json`
+
+**Query params:** (si applicable)
+- `param_name` (type) - description
+
+**Body:** (si applicable)
+```json
+{
+  "field_name": "type - description"
+}
+```
+
+**Réponse attendue (200):**
+```json
+{
+  "data": {
+    "field_name": "type - description"
+  }
+}
+```
+
+**Erreurs possibles:**
+- `404` - Message d'erreur
+- `422` - Message d'erreur de validation
+
+## Modèles/Relations concernés
+
+[Liste des modèles Eloquent impactés: User, Vetement, Order, Mission, etc.]
+
+## Validations attendues
+
+[Liste des règles de validation Laravel nécessaires]
+
+## Logique métier
+
+[Description détaillée de la logique à implémenter côté backend]
+
+## Impact base de données
+
+[Migrations nécessaires, nouveaux champs, nouvelles tables, relations à ajouter]
+
+## Notes supplémentaires
+
+[Toute autre information utile pour l'implémentation]
+```
+
+Cette spécification servira de cahier des charges pour l'équipe Laravel.

@@ -64,10 +64,6 @@ export default function LoginScreen() {
     }, [email, password, login]);
 
     const SocialButton = React.memo<{
-        label,
-        iconUri,
-        onPress,
-    }: {
         label: string;
         iconUri: string;
         onPress?: () => void;
@@ -181,37 +177,34 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     heroTitle: {
-        fontFamily: FONTS.bodyBold,
-        fontSize: 22,
+        fontFamily: FONTS.title,
+        fontSize: 24,
         color: '#1e1e1e',
         textAlign: 'center',
-        letterSpacing: 0.4,
+        letterSpacing: 0,
         textTransform: 'uppercase',
-        lineHeight: 28,
+        lineHeight: 24,
     },
     form: {
         gap: 20,
         width: '100%',
     },
     input: {
-        borderBottomWidth: 1.6,
-        borderBottomColor: COLORS.primaryBlue,
+        borderBottomWidth: 1,
+        borderBottomColor: '#1e1e1e',
         paddingVertical: 10,
         fontFamily: FONTS.body,
-        fontSize: 14,
+        fontSize: 16,
         color: '#1e1e1e',
     },
     primaryButton: {
-        height: 52,
-        borderRadius: 10,
+        height: 50,
+        borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: COLORS.primaryBlue,
-        shadowColor: COLORS.primaryBlue,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
-        elevation: 8,
+        borderWidth: 1,
+        borderColor: COLORS.primaryBlue,
     },
     primaryButtonDisabled: {
         opacity: 0.7,
@@ -219,38 +212,32 @@ const styles = StyleSheet.create({
     primaryButtonText: {
         color: '#fff',
         fontFamily: FONTS.bodyBold,
-        fontSize: 14,
+        fontSize: 12,
         letterSpacing: 0.6,
+        textAlign: 'center',
     },
     socialStack: {
         gap: 12,
         width: '100%',
     },
     socialButton: {
-        height: 52,
-        borderRadius: 12,
+        height: 50,
+        borderRadius: 8,
         backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.06)',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         gap: 12,
-        shadowColor: '#000',
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
     },
     socialIcon: {
-        width: 18,
-        height: 18,
+        width: 15,
+        height: 15,
         resizeMode: 'contain',
     },
     socialLabel: {
         fontFamily: FONTS.bodyBold,
-        fontSize: 13,
+        fontSize: 12,
         color: '#1e1e1e',
-        letterSpacing: 0.4,
+        letterSpacing: 0.6,
     },
 });

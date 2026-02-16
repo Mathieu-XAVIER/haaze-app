@@ -13,8 +13,8 @@ const formatReward = (mission: Mission): string => {
 
 const MissionCard = ({ mission }: { mission: Mission }) => {
     const ratio = Math.min(mission.progress / mission.total, 1);
-    const progressWidth = ratio * 319;
-    
+    const progressPercent = `${ratio * 100}%`;
+
     return (
         <TouchableOpacity activeOpacity={0.9} style={styles.missionCard}>
             <View style={styles.missionContent}>
@@ -28,12 +28,12 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
                 </View>
                 <View style={styles.progressContainer}>
                     <View style={styles.progressTrack}>
-                        {progressWidth > 0 && (
+                        {ratio > 0 && (
                             <LinearGradient
                                 colors={['#E5E4FF', '#ffffff']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 1, y: 0 }}
-                                style={[styles.progressFillImage, { width: progressWidth }]}
+                                style={[styles.progressFillImage, { width: progressPercent }]}
                             />
                         )}
                     </View>
@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 120,
         paddingTop: 0,
+        flexGrow: 1,
     },
     heroSection: {
         marginBottom: 0,
@@ -262,7 +263,6 @@ const styles = StyleSheet.create({
         minHeight: 444,
         alignItems: 'center',
         overflow: 'hidden',
-        width: '100%',
     },
     heroHeader: {
         flexDirection: 'row',
@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
         height: 52,
     },
     heroTitle: {
-        fontSize: 16,
+        fontSize: 12,
         fontFamily: FONTS.bodyBold,
         color: COLORS.textDark,
-        fontWeight: '800',
-        letterSpacing: 0.8,
+        letterSpacing: 0.6,
+        textAlign: 'center',
     },
     skinsRow: {
         flexDirection: 'row',
@@ -346,7 +346,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
         marginTop: 0,
         gap: 16,
-        width: 365,
+        width: '100%',
+        maxWidth: 365,
         alignSelf: 'center',
     },
     sectionHeader: {
@@ -360,14 +361,15 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontFamily: FONTS.title,
         color: COLORS.primaryBlue,
-        letterSpacing: 1,
-        lineHeight: 28,
+        letterSpacing: 0,
+        lineHeight: 24,
+        textTransform: 'uppercase',
     },
     sectionUnderline: {
-        height: 6,
-        borderRadius: 10,
+        height: 9,
+        borderRadius: 33,
         backgroundColor: COLORS.accentYellow,
-        marginTop: -2,
+        marginTop: 20,
         alignSelf: 'stretch',
     },
     missionCard: {
@@ -406,7 +408,8 @@ const styles = StyleSheet.create({
     },
     progressContainer: {
         position: 'relative',
-        width: 319,
+        width: '100%',
+        maxWidth: 319,
         height: 14,
         alignItems: 'center',
         justifyContent: 'center',
@@ -414,7 +417,7 @@ const styles = StyleSheet.create({
     },
     progressTrack: {
         position: 'absolute',
-        width: 319,
+        width: '100%',
         height: 14,
         borderRadius: 2,
         borderWidth: 0.75,
@@ -436,7 +439,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.4,
         zIndex: 1,
         fontWeight: '600',
-        left: 154,
+        alignSelf: 'center',
         top: 1,
     },
     missionsButtonContainer: {
@@ -445,13 +448,15 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     missionsButton: {
-        width: 310,
+        width: '100%',
+        maxWidth: 310,
         paddingVertical: 12,
         paddingHorizontal: 67,
         borderRadius: 2,
         backgroundColor: '#E5E4FF',
         alignItems: 'center',
         justifyContent: 'center',
+        alignSelf: 'center',
         ...Platform.select({
             web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04)' },
             default: {

@@ -24,11 +24,35 @@ const ICONS = {
     },
 };
 
-const SUBTRACT_PATHS = {
-    Home: 'M393 60H0V0H2.75C30.75 0 20.75 49.9687 58.75 50C96.75 49.9687 88.75 0 114.75 0H393V60Z',
-    Missions: 'M393 60H0V0H94.75C122.75 0 112.75 49.9687 150.75 50C188.75 49.9687 178.75 0 206.75 0H393V60Z',
-    Collection: 'M393 60H0V0H185.75C213.75 0 203.75 49.9687 241.75 50C279.75 49.9687 269.75 0 297.75 0H393V60Z',
-    Profil: 'M393 60H0V0H276.75C304.75 0 294.75 49.9687 332.75 50C370.75 49.9687 360.75 0 388.75 0H393V60Z',
+// Fonction pour générer dynamiquement les paths de vague basés sur la largeur de l'écran
+const generateWavePath = (width: number, buttonCenterRatio: number): string => {
+    const height = 60;
+    const buttonCenter = width * buttonCenterRatio;
+
+    // Paramètres de la vague (ajustés proportionnellement)
+    const waveWidth = 56; // Largeur totale de la vague (de courbe à courbe)
+    const waveHeight = 50; // Hauteur de la vague (dip)
+    const curveWidth = 28; // Largeur d'une courbe (moitié de la vague)
+
+    // Points clés de la vague centrés sur le bouton
+    const startX = Math.max(0, buttonCenter - waveWidth);
+    const curveStart = buttonCenter - curveWidth;
+    const center = buttonCenter;
+    const curveEnd = buttonCenter + curveWidth;
+    const endX = Math.min(width, buttonCenter + waveWidth);
+
+    // Construire le path SVG avec des courbes de Bézier cubiques très arrondies
+    // Utilise des courbes avec deux points de contrôle pour un effet très doux
+    return `M${width} ${height}H0V0H${startX}` +
+           // Courbe descendante (gauche) - très arrondie
+           `C${startX + 15} 0, ${curveStart - 8} ${waveHeight * 0.4}, ${curveStart} ${waveHeight * 0.75}` +
+           // Transition douce vers le centre - arrondi au bas
+           `C${curveStart + 8} ${waveHeight * 0.92}, ${center - 12} ${waveHeight * 0.98}, ${center} ${waveHeight}` +
+           // Transition douce depuis le centre - arrondi au bas
+           `C${center + 12} ${waveHeight * 0.98}, ${curveEnd - 8} ${waveHeight * 0.92}, ${curveEnd} ${waveHeight * 0.75}` +
+           // Courbe montante (droite) - très arrondie
+           `C${curveEnd + 8} ${waveHeight * 0.4}, ${endX - 15} 0, ${endX} 0` +
+           `H${width}V${height}Z`;
 };
 
 const resolveIconUri = (source: any) => {
@@ -76,12 +100,19 @@ const Navbar = React.memo<NavbarProps>(({ activeTab, onHomePress, onMissionsPres
 
     const baseWidth = 393;
     const scale = width / baseWidth;
-    
+
+    const buttonCenterRatios = {
+        Home: 0.15,
+        Missions: 0.38,
+        Collection: 0.62,
+        Profil: 0.85,
+    };
+
     const buttonCenters = {
-        Home: width * 0.15,
-        Missions: width * 0.38,
-        Collection: width * 0.62,
-        Profil: width * 0.85,
+        Home: width * buttonCenterRatios.Home,
+        Missions: width * buttonCenterRatios.Missions,
+        Collection: width * buttonCenterRatios.Collection,
+        Profil: width * buttonCenterRatios.Profil,
     };
 
     const activeButtonWidth = 44 * scale;
@@ -102,10 +133,13 @@ const Navbar = React.memo<NavbarProps>(({ activeTab, onHomePress, onMissionsPres
 
     const navbarHeight = 60;
 
+    // Générer le path dynamique pour l'onglet actif
+    const currentWavePath = generateWavePath(width, buttonCenterRatios[activeTab]);
+
     return (
         <View style={styles.container}>
-            <Svg key={`navbar-bg-${activeTab}`} width="100%" height={navbarHeight} style={styles.backgroundSvg} viewBox="0 0 393 60" preserveAspectRatio="none">
-                <Path d={SUBTRACT_PATHS[activeTab]} fill={COLORS.primaryBlue} />
+            <Svg key={`navbar-bg-${activeTab}-${width}`} width={width} height={navbarHeight} style={styles.backgroundSvg} viewBox={`0 0 ${width} ${navbarHeight}`}>
+                <Path d={currentWavePath} fill={COLORS.primaryBlue} />
             </Svg>
 
             <TouchableOpacity

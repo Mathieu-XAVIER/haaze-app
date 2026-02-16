@@ -231,7 +231,12 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.heroProgressTrack}>
-                    <View style={[styles.heroProgressFill, { width: `${getProgressPercentage()}%` }]} />
+                    <LinearGradient
+                        colors={['#6740ff', '#3300fd']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={[styles.heroProgressFill, { width: `${getProgressPercentage()}%` }]}
+                    />
                 </View>
                 <View style={styles.levelRow}>
                     <Text style={styles.levelLabel}>Lv. {getCurrentLevel()}</Text>
@@ -303,6 +308,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingBottom: 120,
         paddingTop: 40,
+        flexGrow: 1,
     },
     heroSection: {
         marginBottom: 30,
@@ -312,7 +318,6 @@ const styles = StyleSheet.create({
         marginHorizontal: -20,
         paddingHorizontal: 20,
         minHeight: 400,
-        width: '100%',
     },
     heroHeader: {
         flexDirection: 'row',
@@ -326,10 +331,11 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     heroTitle: {
-        fontSize: 20,
-        fontFamily: FONTS.title,
+        fontSize: 12,
+        fontFamily: FONTS.bodyBold,
         color: COLORS.textDark,
-        textTransform: 'uppercase',
+        letterSpacing: 0.6,
+        textAlign: 'center',
     },
     heroImage: {
         width: '100%',
@@ -349,20 +355,21 @@ const styles = StyleSheet.create({
         color: COLORS.textDark,
     },
     levelLabel: {
-        color: '#5c5c5c',
-        fontSize: 12,
+        color: '#1e1e1e',
+        fontSize: 7,
         fontFamily: FONTS.body,
     },
     heroProgressTrack: {
-        height: 6,
-        backgroundColor: '#eae4ff',
-        borderRadius: 999,
+        height: 12,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: '#6740ff',
+        borderRadius: 0,
         overflow: 'hidden',
         marginBottom: 8,
     },
     heroProgressFill: {
         width: '55%',
-        backgroundColor: COLORS.primaryBlue,
         height: '100%',
     },
     levelRow: {
@@ -378,20 +385,35 @@ const styles = StyleSheet.create({
     heroButton: {
         flex: 1,
         minWidth: 0,
-        paddingVertical: 14,
+        paddingVertical: 15,
         borderRadius: 5,
         alignItems: 'center',
-        backgroundColor: COLORS.primaryBlue,
+        backgroundColor: '#1e1e1e',
+        ...Platform.select({
+            web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04)' },
+            default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.04,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 12,
+                elevation: 2,
+            },
+        }),
     },
     heroButtonDark: {
-        backgroundColor: COLORS.textDark,
+        backgroundColor: '#1e1e1e',
     },
     heroButtonText: {
         color: '#fff',
         fontFamily: FONTS.bodyBold,
+        fontSize: 12,
+        letterSpacing: 0.6,
     },
     heroButtonTextDark: {
         color: '#fff',
+        fontFamily: FONTS.bodyBold,
+        fontSize: 12,
+        letterSpacing: 0.6,
     },
     borderButton: {
         flex: 1,
@@ -419,15 +441,30 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     missionsButton: {
-        width: '80%',
-        paddingVertical: 14,
+        width: '100%',
+        maxWidth: 310,
+        paddingVertical: 12,
+        paddingHorizontal: 67,
         borderRadius: 2,
         alignItems: 'center',
-        backgroundColor: '#E5E4FF',
+        alignSelf: 'center',
+        backgroundColor: '#ffffff',
+        ...Platform.select({
+            web: { boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04)' },
+            default: {
+                shadowColor: '#000',
+                shadowOpacity: 0.04,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 12,
+                elevation: 2,
+            },
+        }),
     },
     missionsButtonText: {
         color: '#3300FD',
         fontFamily: FONTS.bodyBold,
+        fontSize: 12,
+        letterSpacing: 0.6,
     },
     sectionHeader: {
         marginTop: 20,
@@ -440,14 +477,15 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontFamily: FONTS.title,
         color: COLORS.primaryBlue,
-        letterSpacing: 1,
-        lineHeight: 28,
+        letterSpacing: 0,
+        lineHeight: 24,
+        textTransform: 'uppercase',
     },
     sectionUnderline: {
-        height: 6,
-        borderRadius: 10,
+        height: 9,
+        borderRadius: 33,
         backgroundColor: COLORS.accentYellow,
-        marginTop: -2,
+        marginTop: 20,
         alignSelf: 'stretch',
     },
     missionCard: {
@@ -495,9 +533,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     progressLabel: {
-        color: '#000',
-        fontSize: 10,
+        color: '#130077',
+        fontSize: 8,
         fontFamily: FONTS.bodyBold,
+        letterSpacing: 0.4,
     },
     collectionGrid: {
         flexDirection: 'row',
