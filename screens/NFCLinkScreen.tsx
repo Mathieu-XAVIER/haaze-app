@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -80,9 +80,9 @@ export default function NFCLinkScreen() {
             wave2.setValue(0);
             wave3.setValue(0);
         }
-    }, [status]);
+    }, [status, wave1, wave2, wave3]);
 
-    const startWaveAnimation = () => {
+    const startWaveAnimation = useCallback(() => {
         const createWaveAnimation = (animatedValue: Animated.Value, delay: number) => {
             return Animated.loop(
                 Animated.sequence([
@@ -107,9 +107,9 @@ export default function NFCLinkScreen() {
             createWaveAnimation(wave2, 400),
             createWaveAnimation(wave3, 800),
         ]).start();
-    };
+    }, [wave1, wave2, wave3]);
 
-    const handleNfcTag = async (nfcId: string) => {
+    const handleNfcTag = useCallback(async (nfcId: string) => {
         try {
             // Vérifier d'abord si le tag est déjà lié
             const nfcStatus = await checkNfcStatus(nfcId);
@@ -139,9 +139,9 @@ export default function NFCLinkScreen() {
             setStatus('error');
             setErrorMessage('Une erreur est survenue lors de la liaison');
         }
-    };
+    }, [orderId, clothingId, clothingName, navigation]);
 
-    const startScan = async () => {
+    const startScan = useCallback(async () => {
         setStatus('scanning');
         setErrorMessage('');
 
@@ -190,9 +190,9 @@ export default function NFCLinkScreen() {
                 // Ignorer
             }
         }
-    };
+    }, [handleNfcTag]);
 
-    const handleiOSScan = async () => {
+    const handleiOSScan = useCallback(async () => {
         return new Promise<void>((resolve, reject) => {
             let tagDetected = false;
             const timeoutId = setTimeout(() => {
@@ -231,9 +231,9 @@ export default function NFCLinkScreen() {
                     reject(err);
                 });
         });
-    };
+    }, [handleNfcTag]);
 
-    const handleAndroidScan = async () => {
+    const handleAndroidScan = useCallback(async () => {
         await NfcManager.requestTechnology(NfcTech.Ndef);
         const tag = await NfcManager.getTag();
         
@@ -249,14 +249,25 @@ export default function NFCLinkScreen() {
         }
 
         await handleNfcTag(nfcId);
-    };
+    }, [handleNfcTag]);
 
-    const handleRetry = () => {
+    const handleRetry = useCallback(() => {
         setStatus('idle');
         setErrorMessage('');
-    };
+    }, []);
 
-    const renderWave = (animatedValue: Animated.Value, size: number) => {
+    const handleGoBack = useCallback(() => {
+        navigation.goBack();
+    }, [navigation]);
+
+    const handleCancelScan = useCallback(() => {
+        setStatus('idle');
+        if (NfcManager) {
+            NfcManager.cancelTechnologyRequest().catch(() => {});
+        }
+    }, []);
+
+    const renderWave = useCallback((animatedValue: Animated.Value, size: number) => {
         const scale = animatedValue.interpolate({
             inputRange: [0, 1],
             outputRange: [1, 2.5],
@@ -280,14 +291,14 @@ export default function NFCLinkScreen() {
                 ]}
             />
         );
-    };
+    }, []);
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={handleGoBack}
                     activeOpacity={0.7}
                 >
                     <Ionicons name="close" size={24} color={COLORS.textDark} />
@@ -358,12 +369,7 @@ export default function NFCLinkScreen() {
 
                         <TouchableOpacity
                             style={styles.cancelButton}
-                            onPress={() => {
-                                setStatus('idle');
-                                if (NfcManager) {
-                                    NfcManager.cancelTechnologyRequest().catch(() => {});
-                                }
-                            }}
+                            onPress={handleCancelScan}
                             activeOpacity={0.8}
                         >
                             <Text style={styles.cancelButtonText}>Annuler</Text>
@@ -397,7 +403,7 @@ export default function NFCLinkScreen() {
 
                         <TouchableOpacity
                             style={styles.backLinkButton}
-                            onPress={() => navigation.goBack()}
+                            onPress={handleGoBack}
                             activeOpacity={0.7}
                         >
                             <Text style={styles.backLinkText}>Retour à la commande</Text>

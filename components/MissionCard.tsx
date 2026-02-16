@@ -11,14 +11,18 @@ interface MissionCardProps {
   terminee?: boolean;
 }
 
-export default function MissionCard(props: MissionCardProps) {
+const MissionCard = React.memo<MissionCardProps>((props) => {
   if (props.terminee) {
     return <MissionCardComplete {...props} />;
   }
   return <MissionCardIncomplete {...props} />;
-}
+});
 
-function MissionCardBorder({ children }: { children: React.ReactNode }) {
+MissionCard.displayName = 'MissionCard';
+
+export default MissionCard;
+
+const MissionCardBorder = React.memo<{ children: React.ReactNode }>(({ children }) => {
   return (
     <LinearGradient
       colors={["#3300FD", "#FF3600"]}
@@ -32,9 +36,11 @@ function MissionCardBorder({ children }: { children: React.ReactNode }) {
       </View>
     </LinearGradient>
   );
-}
+});
 
-function MissionCardIncomplete({ title, progress, total, xp }: MissionCardProps) {
+MissionCardBorder.displayName = 'MissionCardBorder';
+
+const MissionCardIncomplete = React.memo<MissionCardProps>(({ title, progress, total, xp }) => {
   return (
     <MissionCardBorder>
       <View style={stylesIncomplete.content}>
@@ -53,9 +59,11 @@ function MissionCardIncomplete({ title, progress, total, xp }: MissionCardProps)
       </View>
     </MissionCardBorder>
   );
-}
+});
 
-function MissionCardComplete({ xp }: MissionCardProps) {
+MissionCardIncomplete.displayName = 'MissionCardIncomplete';
+
+const MissionCardComplete = React.memo<MissionCardProps>(({ xp }) => {
   return (
     <LinearGradient
       colors={["#FF3600", "#3300FD"]}
@@ -69,4 +77,6 @@ function MissionCardComplete({ xp }: MissionCardProps) {
       </View>
     </LinearGradient>
   );
-}
+});
+
+MissionCardComplete.displayName = 'MissionCardComplete';

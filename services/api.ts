@@ -1,6 +1,18 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import type {
+    RawUser,
+    RawOrder,
+    RawClothing,
+    RawUserClothing,
+    RawMediaItem,
+    RawMission,
+    RawCollectionData,
+    RawSkin,
+    RawStats,
+    RawOrderItem,
+} from './api.types';
 
 const resolveApiBaseUrl = () => {
     const extra = (Constants.expoConfig?.extra ?? Constants.manifest?.extra ?? {}) as {
@@ -74,17 +86,17 @@ api.interceptors.response.use(
 export async function getUser(): Promise<User> {
     try {
         const response = await api.get('/me');
-        const user = response.data.data || response.data;
-        
+        const user: RawUser = response.data.data || response.data;
+
         if (user && user.id) {
             // Nouvelle structure : user_clothing avec relation clothing
             const rawVetements = user.vetements || user.clothes || user.clothings || user.owned_clothing || user.user_clothing || [];
-            
-            const clothesMap = new Map<number, any>();
+
+            const clothesMap = new Map<number, RawClothing>();
             if (user.orders && Array.isArray(user.orders)) {
-                user.orders.forEach((order: any) => {
+                user.orders.forEach((order: RawOrder) => {
                     if (order.clothes && Array.isArray(order.clothes)) {
-                        order.clothes.forEach((clothing: any) => {
+                        order.clothes.forEach((clothing: RawClothing) => {
                             if (clothing.id) {
                                 clothesMap.set(clothing.id, clothing);
                             }
@@ -93,11 +105,11 @@ export async function getUser(): Promise<User> {
                 });
             }
             
-            const vetements = rawVetements.map((vetement: any) => {
+            const vetements = rawVetements.map((vetement: RawUserClothing) => {
                 // Nouvelle structure : vetement peut être un UserClothing avec une relation clothing
-                const userClothing = vetement;
-                const clothing = vetement.clothing || vetement;
-                const fullClothing = clothesMap.get(clothing?.id || vetement.id) || clothing;
+                const userClothing: RawUserClothing = vetement;
+                const clothing: RawClothing = vetement.clothing || vetement;
+                const fullClothing: RawClothing = clothesMap.get(clothing?.id || vetement.id) || clothing;
                 
                 let imageUrl = vetement.image 
                     || vetement.image_url 
@@ -202,7 +214,7 @@ export async function getUser(): Promise<User> {
             }
             
             // Normaliser les commandes pour inclure la date
-            const normalizedOrders = (user.orders || user.commandes || []).map((order: any) => ({
+            const normalizedOrders = (user.orders || user.commandes || []).map((order: RawOrder) => ({
                 id: order.id,
                 numero_commande: order.numero_commande || order.numeroCommande || order.order_number || '',
                 date: order.date || order.created_at || order.createdAt || order.date_commande || '',
@@ -221,7 +233,7 @@ export async function getUser(): Promise<User> {
             };
         }
         throw new Error('Réponse utilisateur invalide');
-    } catch (error: any) {
+    } catch (error: unknown) {
         return {
             id: 0,
             name: 'Utilisateur',
@@ -382,7 +394,7 @@ export async function getMissions(): Promise<Mission[]> {
         const response = await api.get('/missions');
         const data = response.data.data || response.data || [];
         if (Array.isArray(data)) {
-            return data.map((mission: any) => ({
+            return data.map((mission: RawMission) => ({
                 id: mission.id,
                 title: mission.title || mission.name || '',
                 description: mission.description,
@@ -394,7 +406,7 @@ export async function getMissions(): Promise<Mission[]> {
             }));
         }
         return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
         return [];
     }
 }
@@ -404,7 +416,7 @@ export async function getCollections(): Promise<Collection[]> {
         const response = await api.get('/collections');
         const data = response.data.data || response.data || [];
         if (Array.isArray(data)) {
-            return data.map((collection: any) => ({
+            return data.map((collection: RawCollectionData) => ({
                 id: collection.id,
                 title: collection.title || collection.name || '',
                 subtitle: collection.subtitle,
@@ -413,7 +425,7 @@ export async function getCollections(): Promise<Collection[]> {
             }));
         }
         return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
         return [];
     }
 }
@@ -423,7 +435,7 @@ export async function getSkins(): Promise<Skin[]> {
         const response = await api.get('/skins');
         const data = response.data.data || response.data || [];
         // Adapter la réponse de l'API au format attendu
-        return Array.isArray(data) ? data.map((skin: any) => ({
+        return Array.isArray(data) ? data.map((skin: RawSkin) => ({
             id: skin.id,
             name: skin.name || skin.nom,
             image: skin.image || undefined,
@@ -439,7 +451,7 @@ export async function getClothes(): Promise<Vetement[]> {
     try {
         const response = await api.get('/clothes');
         const data = response.data.data || response.data || [];
-        return Array.isArray(data) ? data.map((clothing: any) => {
+        return Array.isArray(data) ? data.map((clothing: RawClothing) => {
             let imageUrl = clothing.image 
                 || clothing.image_url 
                 || clothing.media_url
@@ -476,7 +488,7 @@ export async function getClothes(): Promise<Vetement[]> {
 export async function getClothing(clothingId: number): Promise<Vetement> {
     try {
         const response = await api.get(`/clothes/${clothingId}`);
-        const clothing = response.data.data || response.data;
+        const clothing: RawClothing = response.data.data || response.data;
         return {
             id: clothing.id,
             nom: clothing.nom || clothing.name,
@@ -493,10 +505,10 @@ export async function checkNfc(nfcId: string): Promise<Vetement | null> {
     try {
         const response = await api.get(`/nfc/check/${nfcId}`);
         // Nouvelle structure : la réponse contient un UserClothing avec une relation clothing
-        const userClothing = response.data.data || response.data;
+        const userClothing: RawUserClothing = response.data.data || response.data;
         if (!userClothing) return null;
-        
-        const clothing = userClothing.clothing || userClothing;
+
+        const clothing: RawClothing = userClothing.clothing || userClothing;
         
         let imageUrl = userClothing.image 
             || clothing?.image 
@@ -539,7 +551,7 @@ export async function getUserStats(): Promise<UserStats> {
     try {
         try {
             const response = await api.get('/user/stats');
-            const stats = response.data.data || response.data;
+            const stats: RawStats = response.data.data || response.data;
             if (stats) {
                 return {
                     vetements_owned: stats.vetements_owned || stats.vetements_count || 0,
@@ -577,7 +589,7 @@ export async function getOrderClothes(numeroCommande: string): Promise<Clothing[
     try {
         const response = await api.post('/orders/lookup', { numero_commande: numeroCommande });
         const data = response.data.data || response.data || [];
-        return Array.isArray(data) ? data.map((clothing: any) => ({
+        return Array.isArray(data) ? data.map((clothing: RawClothing) => ({
             id: clothing.id,
             name: clothing.name || clothing.nom,
             numero_commande: clothing.numero_commande || numeroCommande,
@@ -603,8 +615,8 @@ export async function linkClothing(clothingId: number, nfcId: string): Promise<V
             nfc_id: nfcId,
         });
         // Nouvelle structure : la réponse contient un UserClothing avec une relation clothing
-        const userClothing = response.data.data || response.data;
-        const clothing = userClothing.clothing || userClothing;
+        const userClothing: RawUserClothing = response.data.data || response.data;
+        const clothing: RawClothing = userClothing.clothing || userClothing;
         
         let imageUrl = userClothing.image 
             || clothing?.image 
@@ -654,12 +666,12 @@ export async function getOrders(): Promise<OrderWithItems[]> {
     try {
         const response = await api.get('/orders');
         const data = response.data.data || response.data || [];
-        
-        return Array.isArray(data) ? data.map((order: any) => ({
+
+        return Array.isArray(data) ? data.map((order: RawOrder) => ({
             id: order.id,
             order_number: order.order_number || order.numero_commande || '',
             created_at: order.created_at || order.date || '',
-            items: (order.items || order.order_items || []).map((item: any) => ({
+            items: (order.items || order.order_items || []).map((item: RawOrderItem) => ({
                 id: item.id,
                 clothing_id: item.clothing_id,
                 quantity: item.quantity || 1,
@@ -678,8 +690,8 @@ export async function getOrders(): Promise<OrderWithItems[]> {
                     collection: item.clothing?.collection,
                 },
             })),
-            total_items: order.total_items ?? (order.items || order.order_items || []).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0),
-            total_linked: order.total_linked ?? (order.items || order.order_items || []).reduce((sum: number, item: any) => sum + (item.linked_count || 0), 0),
+            total_items: order.total_items ?? (order.items || order.order_items || []).reduce((sum: number, item: RawOrderItem) => sum + (item.quantity || 1), 0),
+            total_linked: order.total_linked ?? (order.items || order.order_items || []).reduce((sum: number, item: RawOrderItem) => sum + (item.linked_count || 0), 0),
         })) : [];
     } catch (error) {
         console.error('[API] Erreur getOrders:', error);
@@ -694,8 +706,8 @@ export async function getUnlinkedClothes(orderId: number): Promise<UnlinkedCloth
     try {
         const response = await api.get(`/orders/${orderId}/unlinked-clothes`);
         const data = response.data.data || response.data || [];
-        
-        return Array.isArray(data) ? data.map((item: any) => ({
+
+        return Array.isArray(data) ? data.map((item: RawOrderItem) => ({
             id: item.id,
             clothing_id: item.clothing_id,
             quantity: item.quantity || 1,
@@ -739,7 +751,7 @@ export async function scanNfcForOrder(
             message: data.message || 'Vêtement lié avec succès !',
             remaining: data.remaining ?? 0,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         const errorData = error.response?.data;
         const errorCode = errorData?.error_code || errorData?.code;
         const errorMessage = errorData?.message || 'Une erreur est survenue';

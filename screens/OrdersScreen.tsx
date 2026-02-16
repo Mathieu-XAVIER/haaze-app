@@ -20,13 +20,89 @@ type NavigationProp = NativeStackNavigationProp<{
     OrderDetail: { orderId: number; orderNumber: string };
 }>;
 
+// Hauteur approximative d'une carte de commande
+const ITEM_HEIGHT = 200;
+
+// Composant OrderCard extrait et mémorisé
+const OrderCard = React.memo<{
+    order: OrderWithItems;
+    formatDate: (dateString: string) => string;
+    isFullyLinked: (order: OrderWithItems) => boolean;
+    onNavigateToDetail: (orderId: number, orderNumber: string) => void;
+}>(({ order, formatDate, isFullyLinked, onNavigateToDetail }) => {
+    const fullyLinked = isFullyLinked(order);
+
+    const handlePress = useCallback(() => {
+        onNavigateToDetail(order.id, order.order_number);
+    }, [order.id, order.order_number, onNavigateToDetail]);
+
+    return (
+        <View style={[styles.orderCard, fullyLinked && styles.orderCardComplete]}>
+            <View style={styles.orderHeader}>
+                <View style={styles.orderInfo}>
+                    <Text style={styles.orderNumber}>Commande {order.order_number}</Text>
+                    <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
+                </View>
+                {fullyLinked && (
+                    <View style={styles.checkBadge}>
+                        <Ionicons name="checkmark-circle" size={28} color="#22C55E" />
+                    </View>
+                )}
+            </View>
+
+            <View style={styles.progressSection}>
+                <View style={styles.progressInfo}>
+                    <Text style={styles.progressText}>
+                        {order.total_linked}/{order.total_items} vêtements liés
+                    </Text>
+                    <View style={styles.progressBarContainer}>
+                        <View style={styles.progressBar}>
+                            <View
+                                style={[
+                                    styles.progressFill,
+                                    {
+                                        width: `${order.total_items > 0
+                                            ? Math.min((order.total_linked / order.total_items) * 100, 100)
+                                            : 0}%`,
+                                    },
+                                    fullyLinked && styles.progressFillComplete,
+                                ]}
+                            />
+                        </View>
+                    </View>
+                </View>
+            </View>
+
+            {!fullyLinked && (
+                <TouchableOpacity
+                    style={styles.linkButton}
+                    onPress={handlePress}
+                    activeOpacity={0.8}
+                >
+                    <Ionicons name="link" size={18} color="#fff" style={styles.buttonIcon} />
+                    <Text style={styles.linkButtonText}>Lier mes vêtements</Text>
+                </TouchableOpacity>
+            )}
+
+            {fullyLinked && (
+                <View style={styles.completeBadge}>
+                    <Ionicons name="checkmark" size={16} color="#22C55E" />
+                    <Text style={styles.completeText}>Tous vos vêtements sont liés !</Text>
+                </View>
+            )}
+        </View>
+    );
+});
+
+OrderCard.displayName = 'OrderCard';
+
 export default function OrdersScreen() {
     const navigation = useNavigation<NavigationProp>();
     const [orders, setOrders] = useState<OrderWithItems[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const loadOrders = async (isRefresh = false) => {
+    const loadOrders = useCallback(async (isRefresh = false) => {
         try {
             if (!isRefresh) setLoading(true);
             const data = await getOrders();
@@ -37,25 +113,25 @@ export default function OrdersScreen() {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadOrders();
-    }, []);
+    }, [loadOrders]);
 
     // Rafraîchir quand on revient sur l'écran
     useFocusEffect(
         useCallback(() => {
             loadOrders();
-        }, [])
+        }, [loadOrders])
     );
 
-    const onRefresh = () => {
+    const onRefresh = useCallback(() => {
         setRefreshing(true);
         loadOrders(true);
-    };
+    }, [loadOrders]);
 
-    const formatDate = (dateString: string): string => {
+    const formatDate = useCallback((dateString: string): string => {
         try {
             const date = new Date(dateString);
             return date.toLocaleDateString('fr-FR', {
@@ -66,77 +142,39 @@ export default function OrdersScreen() {
         } catch {
             return dateString;
         }
-    };
+    }, []);
 
-    const isFullyLinked = (order: OrderWithItems): boolean => {
+    const isFullyLinked = useCallback((order: OrderWithItems): boolean => {
         return order.total_linked >= order.total_items && order.total_items > 0;
-    };
+    }, []);
 
-    const renderOrderCard = ({ item: order }: { item: OrderWithItems }) => {
-        const fullyLinked = isFullyLinked(order);
+    const handleNavigateToDetail = useCallback((orderId: number, orderNumber: string) => {
+        navigation.navigate('OrderDetail', { orderId, orderNumber });
+    }, [navigation]);
 
-        return (
-            <View style={[styles.orderCard, fullyLinked && styles.orderCardComplete]}>
-                <View style={styles.orderHeader}>
-                    <View style={styles.orderInfo}>
-                        <Text style={styles.orderNumber}>Commande {order.order_number}</Text>
-                        <Text style={styles.orderDate}>{formatDate(order.created_at)}</Text>
-                    </View>
-                    {fullyLinked && (
-                        <View style={styles.checkBadge}>
-                            <Ionicons name="checkmark-circle" size={28} color="#22C55E" />
-                        </View>
-                    )}
-                </View>
+    const renderOrderCard = useCallback(({ item }: { item: OrderWithItems }) => (
+        <OrderCard
+            order={item}
+            formatDate={formatDate}
+            isFullyLinked={isFullyLinked}
+            onNavigateToDetail={handleNavigateToDetail}
+        />
+    ), [formatDate, isFullyLinked, handleNavigateToDetail]);
 
-                <View style={styles.progressSection}>
-                    <View style={styles.progressInfo}>
-                        <Text style={styles.progressText}>
-                            {order.total_linked}/{order.total_items} vêtements liés
-                        </Text>
-                        <View style={styles.progressBarContainer}>
-                            <View style={styles.progressBar}>
-                                <View
-                                    style={[
-                                        styles.progressFill,
-                                        {
-                                            width: `${order.total_items > 0 
-                                                ? Math.min((order.total_linked / order.total_items) * 100, 100) 
-                                                : 0}%`,
-                                        },
-                                        fullyLinked && styles.progressFillComplete,
-                                    ]}
-                                />
-                            </View>
-                        </View>
-                    </View>
-                </View>
+    const getItemLayout = useCallback(
+        (_data: OrderWithItems[] | null | undefined, index: number) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * index,
+            index,
+        }),
+        []
+    );
 
-                {!fullyLinked && (
-                    <TouchableOpacity
-                        style={styles.linkButton}
-                        onPress={() =>
-                            navigation.navigate('OrderDetail', {
-                                orderId: order.id,
-                                orderNumber: order.order_number,
-                            })
-                        }
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons name="link" size={18} color="#fff" style={styles.buttonIcon} />
-                        <Text style={styles.linkButtonText}>Lier mes vêtements</Text>
-                    </TouchableOpacity>
-                )}
+    const handleGoBack = useCallback(() => {
+        navigation.goBack();
+    }, [navigation]);
 
-                {fullyLinked && (
-                    <View style={styles.completeBadge}>
-                        <Ionicons name="checkmark" size={16} color="#22C55E" />
-                        <Text style={styles.completeText}>Tous vos vêtements sont liés !</Text>
-                    </View>
-                )}
-            </View>
-        );
-    };
+    const keyExtractor = useCallback((item: OrderWithItems) => item.id.toString(), []);
 
     if (loading) {
         return (
@@ -151,7 +189,7 @@ export default function OrdersScreen() {
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={handleGoBack}
                     activeOpacity={0.7}
                 >
                     <Ionicons name="arrow-back" size={24} color={COLORS.textDark} />
@@ -164,9 +202,14 @@ export default function OrdersScreen() {
 
             <FlatList
                 data={orders}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={keyExtractor}
                 renderItem={renderOrderCard}
                 contentContainerStyle={styles.listContent}
+                removeClippedSubviews
+                maxToRenderPerBatch={10}
+                windowSize={10}
+                initialNumToRender={10}
+                getItemLayout={getItemLayout}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}

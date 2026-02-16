@@ -7,13 +7,17 @@ type Props = {
     variant?: 'default';
 };
 
-export default function TShirtTitle({ title, variant = 'default' }: Props) {
+const TShirtTitle = React.memo<Props>(({ title, variant = 'default' }) => {
     return (
         <Text style={[styles.base, variant && styles[variant]]}>
             {title.toUpperCase()}
         </Text>
     );
-}
+});
+
+TShirtTitle.displayName = 'TShirtTitle';
+
+export default TShirtTitle;
 
 const styles = StyleSheet.create({
     base: {

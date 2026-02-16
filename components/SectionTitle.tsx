@@ -6,7 +6,7 @@ type Props = {
     title: string;
 };
 
-export default function SectionTitle({ title }: Props) {
+const SectionTitle = React.memo<Props>(({ title }) => {
     return (
         <ImageBackground
             source={require('../assets/bg-title-missions.png')}
@@ -20,7 +20,11 @@ export default function SectionTitle({ title }: Props) {
             </View>
         </ImageBackground>
     );
-}
+});
+
+SectionTitle.displayName = 'SectionTitle';
+
+export default SectionTitle;
 
 const styles = StyleSheet.create({
     wrapper: {

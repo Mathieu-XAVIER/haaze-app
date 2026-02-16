@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,15 +16,15 @@ type Props = {
     onLogout: () => void;
 };
 
-const HaazeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
+const HaazeTabBar = React.memo<BottomTabBarProps>(({ state, descriptors, navigation }) => {
     const insets = useSafeAreaInsets();
     const bottomPadding = Math.max(insets.bottom, 10);
-    
+
     // Récupérer l'onglet actif de manière plus fiable
     const activeRoute = state.routes[state.index];
     const currentTab = (activeRoute?.name || 'Home') as NavbarTab;
 
-    const handlePress = (routeName: NavbarTab) => {
+    const handlePress = useCallback((routeName: NavbarTab) => {
         const targetRoute = state.routes.find(r => r.name === routeName);
         if (!targetRoute) return;
 
@@ -37,7 +37,12 @@ const HaazeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
         if (!event.defaultPrevented) {
             navigation.navigate(routeName);
         }
-    };
+    }, [state.routes, navigation]);
+
+    const handleHomePress = useCallback(() => handlePress('Home'), [handlePress]);
+    const handleMissionsPress = useCallback(() => handlePress('Missions'), [handlePress]);
+    const handleCollectionPress = useCallback(() => handlePress('Collection'), [handlePress]);
+    const handleProfilPress = useCallback(() => handlePress('Profil'), [handlePress]);
 
     return (
         <View style={[styles.tabWrapper, { paddingBottom: bottomPadding }]}>
@@ -45,16 +50,18 @@ const HaazeTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
             <View style={[styles.backgroundExtension, { height: bottomPadding }]} />
             <Navbar
                 activeTab={currentTab}
-                onHomePress={() => handlePress('Home')}
-                onMissionsPress={() => handlePress('Missions')}
-                onCollectionPress={() => handlePress('Collection')}
-                onProfilPress={() => handlePress('Profil')}
+                onHomePress={handleHomePress}
+                onMissionsPress={handleMissionsPress}
+                onCollectionPress={handleCollectionPress}
+                onProfilPress={handleProfilPress}
             />
         </View>
     );
-};
+});
 
-export default function BottomTabs({ onLogout }: Props) {
+HaazeTabBar.displayName = 'HaazeTabBar';
+
+const BottomTabs = React.memo<Props>(({ onLogout }) => {
     return (
         <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={props => <HaazeTabBar {...props} />}>
             <Tab.Screen name="Home" component={HomeScreen} />
@@ -65,7 +72,11 @@ export default function BottomTabs({ onLogout }: Props) {
             </Tab.Screen>
         </Tab.Navigator>
     );
-}
+});
+
+BottomTabs.displayName = 'BottomTabs';
+
+export default BottomTabs;
 
 const styles = StyleSheet.create({
     tabWrapper: {

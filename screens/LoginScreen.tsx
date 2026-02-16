@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, FONTS } from '../styles/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 const assets = {
     background: 'https://www.figma.com/api/mcp/asset/d07ad023-aab6-4798-b9b7-a6f663f31570',
@@ -27,12 +27,13 @@ const assets = {
     google: 'https://www.figma.com/api/mcp/asset/319a5599-2cec-4f78-8976-31f510d176c7',
 };
 
-export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
+export default function LoginScreen() {
+    const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleLogin = async () => {
+    const handleLogin = useCallback(async () => {
         if (!email || !password) {
             Alert.alert('Erreur', 'Remplis tous les champs');
             return;
@@ -47,10 +48,7 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
             });
             const token = response.data.token;
 
-            await AsyncStorage.setItem('token', token);
-            await AsyncStorage.setItem('haaze_logged_in', 'true');
-
-            onLogin();
+            await login(token);
         } catch (error: any) {
             console.error('[Login]', error?.response?.data || error);
             const apiMessage =
@@ -63,9 +61,9 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [email, password, login]);
 
-    const SocialButton = ({
+    const SocialButton = React.memo<{
         label,
         iconUri,
         onPress,
@@ -73,12 +71,14 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
         label: string;
         iconUri: string;
         onPress?: () => void;
-    }) => (
+    }>(({ label, iconUri, onPress }) => (
         <TouchableOpacity style={styles.socialButton} activeOpacity={0.9} onPress={onPress}>
             <Image source={{ uri: iconUri }} style={styles.socialIcon} />
             <Text style={styles.socialLabel}>{label}</Text>
         </TouchableOpacity>
-    );
+    ));
+
+    SocialButton.displayName = 'SocialButton';
 
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>

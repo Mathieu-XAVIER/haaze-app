@@ -54,7 +54,7 @@ type NavbarProps = {
     onProfilPress: () => void;
 };
 
-export default function Navbar({ activeTab, onHomePress, onMissionsPress, onCollectionPress, onProfilPress }: NavbarProps) {
+const Navbar = React.memo<NavbarProps>(({ activeTab, onHomePress, onMissionsPress, onCollectionPress, onProfilPress }) => {
     const { width } = useWindowDimensions();
     const isHomeActive = activeTab === 'Home';
     const isMissionsActive = activeTab === 'Missions';
@@ -285,7 +285,11 @@ export default function Navbar({ activeTab, onHomePress, onMissionsPress, onColl
             </TouchableOpacity>
         </View>
     );
-}
+});
+
+Navbar.displayName = 'Navbar';
+
+export default Navbar;
 
 const styles = StyleSheet.create({
     container: {

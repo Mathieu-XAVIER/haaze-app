@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -62,17 +62,12 @@ const collectionShadow =
               shadowRadius: 10,
           };
 
-const BorderButton = ({
-    children,
-    onPress,
-    variant = 'primary',
-    hero = false,
-}: {
+const BorderButton = React.memo<{
     children: React.ReactNode;
     onPress?: () => void;
     variant?: 'primary' | 'dark' | 'missions';
     hero?: boolean;
-}) => {
+}>(({ children, onPress, variant = 'primary', hero = false }) => {
     const buttonStyle = hero
         ? [styles.heroButton, variant === 'dark' && styles.heroButtonDark]
         : variant === 'missions'
@@ -94,9 +89,11 @@ const BorderButton = ({
             <Text style={textStyle}>{children}</Text>
         </TouchableOpacity>
     );
-};
+});
 
-const MissionCard = ({ mission }: { mission: Mission }) => {
+BorderButton.displayName = 'BorderButton';
+
+const MissionCard = React.memo<{ mission: Mission }>(({ mission }) => {
     const ratio = Math.min(mission.progress / mission.total, 1);
     return (
         <View style={styles.missionCard}>
@@ -114,16 +111,20 @@ const MissionCard = ({ mission }: { mission: Mission }) => {
             </View>
         </View>
     );
-};
+});
 
-const CollectionCard = ({ collection }: { collection: { id: string; title: string; subtitle: string; image: ImageSourcePropType | { uri: string } } }) => (
+MissionCard.displayName = 'MissionCard';
+
+const CollectionCard = React.memo<{ collection: { id: string; title: string; subtitle: string; image: ImageSourcePropType | { uri: string } } }>(({ collection }) => (
     <ImageBackground source={collection.image} style={styles.collectionCard} imageStyle={styles.collectionImage}>
         <View style={styles.collectionOverlay} />
         <View style={styles.collectionTextWrapper}>
             <Text style={styles.collectionTitle}>{collection.title}</Text>
         </View>
     </ImageBackground>
-);
+));
+
+CollectionCard.displayName = 'CollectionCard';
 
 export default function HomeScreen() {
     const { width } = useWindowDimensions();
@@ -133,18 +134,7 @@ export default function HomeScreen() {
     const [collections, setCollections] = useState<Collection[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadData();
-    }, []);
-
-    // Rafraîchir les données quand on revient sur la page
-    useFocusEffect(
-        React.useCallback(() => {
-            loadData();
-        }, [])
-    );
-
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         try {
             setLoading(true);
             // Charger les données en parallèle, mais gérer les erreurs individuellement
@@ -179,23 +169,34 @@ export default function HomeScreen() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const getProgressPercentage = () => {
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
+    // Rafraîchir les données quand on revient sur la page
+    useFocusEffect(
+        useCallback(() => {
+            loadData();
+        }, [loadData])
+    );
+
+    const getProgressPercentage = useCallback(() => {
         if (!user || !user.xp || !user.xpForNextLevel) return 0;
         // Calculer le XP du niveau actuel (reste après avoir soustrait les niveaux précédents)
         const currentLevelXp = user.xp % (user.xpForNextLevel || 1);
         const percentage = (currentLevelXp / (user.xpForNextLevel || 1)) * 100;
         return Math.min(Math.max(percentage, 0), 100); // S'assurer que c'est entre 0 et 100
-    };
+    }, [user]);
 
-    const getCurrentLevel = () => {
+    const getCurrentLevel = useCallback(() => {
         return user?.level || 1;
-    };
+    }, [user]);
 
-    const getNextLevel = () => {
+    const getNextLevel = useCallback(() => {
         return (user?.level || 1) + 1;
-    };
+    }, [user]);
 
     if (loading) {
         return (
