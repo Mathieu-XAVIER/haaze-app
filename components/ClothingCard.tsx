@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Image, StyleSheet, Pressable, ImageSourcePropType } from 'react-native';
 
 interface ClothingCardProps {
@@ -6,14 +6,17 @@ interface ClothingCardProps {
     title: string;
 }
 
-const ClothingCard: React.FC<ClothingCardProps> = ({ imageSource, title }) => {
+const ClothingCard = React.memo<ClothingCardProps>(({ imageSource, title }) => {
     const [isHovered, setIsHovered] = useState(false);
+
+    const handlePressIn = useCallback(() => setIsHovered(true), []);
+    const handlePressOut = useCallback(() => setIsHovered(false), []);
 
     return (
         <Pressable
             style={styles.card}
-            onPressIn={() => setIsHovered(true)}
-            onPressOut={() => setIsHovered(false)}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
         >
             <View style={styles.imageContainer}>
                 {/* Fond vortex */}
@@ -34,7 +37,9 @@ const ClothingCard: React.FC<ClothingCardProps> = ({ imageSource, title }) => {
             )}
         </Pressable>
     );
-};
+});
+
+ClothingCard.displayName = 'ClothingCard';
 
 export default ClothingCard;
 

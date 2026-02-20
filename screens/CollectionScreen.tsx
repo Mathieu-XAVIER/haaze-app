@@ -124,44 +124,28 @@ export default function CollectionScreen() {
 
             {/* Section MES VÊTEMENTS */}
             <Section title="MES VÊTEMENTS" underlineWidth={258}>
-                <View style={styles.vetementsContainer}>
-                    {/* Premier vêtement (grand) */}
-                    {displayedVetements.length > 0 && !displayedVetements[0].isAdd && (
-                        <View style={styles.vetementCardFirst}>
-                            <ImageBackground
-                                source={displayedVetements[0].image}
-                                style={styles.vetementImageBg}
-                                imageStyle={styles.vetementImage}
-                            >
-                                <View style={styles.vetementOverlay} />
-                            </ImageBackground>
+                <View style={styles.vetementsGrid}>
+                    {displayedVetements.map((vetement) => (
+                        <View key={vetement.id} style={styles.vetementCard}>
+                            {vetement.isAdd ? (
+                                <TouchableOpacity
+                                    style={styles.addCard}
+                                    onPress={() => navigation.navigate('AddClothing' as never)}
+                                    activeOpacity={0.8}
+                                >
+                                    <Text style={styles.addSymbol}>+</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <ImageBackground
+                                    source={vetement.image}
+                                    style={styles.vetementImageBg}
+                                    imageStyle={styles.vetementImage}
+                                >
+                                    <View style={styles.vetementOverlay} />
+                                </ImageBackground>
+                            )}
                         </View>
-                    )}
-                    
-                    {/* Deuxième et troisième vêtements (petits) */}
-                    <View style={styles.vetementsGrid}>
-                        {displayedVetements.slice(1, 3).map((vetement) => (
-                            <View key={vetement.id} style={styles.vetementCard}>
-                                {vetement.isAdd ? (
-                                    <TouchableOpacity
-                                        style={styles.addCard}
-                                        onPress={() => navigation.navigate('AddClothing' as never)}
-                                        activeOpacity={0.8}
-                                    >
-                                        <Text style={styles.addSymbol}>+</Text>
-                                    </TouchableOpacity>
-                                ) : (
-                                    <ImageBackground
-                                        source={vetement.image}
-                                        style={styles.vetementImageBg}
-                                        imageStyle={styles.vetementImage}
-                                    >
-                                        <View style={styles.vetementOverlay} />
-                                    </ImageBackground>
-                                )}
-                            </View>
-                        ))}
-                    </View>
+                    ))}
                 </View>
             </Section>
 
@@ -275,6 +259,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 59,
         paddingBottom: 120,
+        flexGrow: 1,
     },
     heroSection: {
         marginBottom: 0,
@@ -283,7 +268,6 @@ const styles = StyleSheet.create({
         paddingBottom: 30,
         marginHorizontal: -20,
         paddingHorizontal: 20,
-        height: 444,
         justifyContent: 'flex-start',
     },
     heroHeader: {
@@ -299,10 +283,11 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     heroTitle: {
-        fontSize: 16,
+        fontSize: 12,
         fontFamily: FONTS.bodyBold,
         color: '#1E1E1E',
-        letterSpacing: 0.8,
+        letterSpacing: 0.6,
+        textAlign: 'center',
     },
     section: {
         marginTop: 32,
@@ -325,30 +310,17 @@ const styles = StyleSheet.create({
         height: 9,
         borderRadius: 33,
         backgroundColor: COLORS.accentYellow,
-        marginTop: 19,
-    },
-    vetementsContainer: {
-        marginTop: 48,
-        gap: 16,
-    },
-    vetementCardFirst: {
-        width: 175,
-        height: 175,
-        borderRadius: 9,
-        overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: '#8173FF',
-        backgroundColor: '#fff',
-        alignSelf: 'flex-start',
+        marginTop: 20,
     },
     vetementsGrid: {
         flexDirection: 'row',
         gap: 15,
         flexWrap: 'wrap',
+        marginTop: 48,
     },
     vetementCard: {
-        width: 175,
-        height: 175,
+        width: '47%',
+        aspectRatio: 1,
         borderRadius: 9,
         overflow: 'hidden',
         borderWidth: 2,

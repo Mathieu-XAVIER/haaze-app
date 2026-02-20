@@ -40,3 +40,14 @@ yarn-error.*
 # IDEs and editors
 .vscode/
 .idea/
+
+# Claude Code local settings
+.claude/*.local.*
+.claude/settings.local.json
+
+# Backend specifications
+.backend-specs/
+
+# EAS
+.eas/
+eas.json.local

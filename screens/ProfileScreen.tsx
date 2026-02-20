@@ -133,13 +133,6 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                         end={{ x: 0, y: 1 }}
                         style={styles.heroGradient}
                     />
-
-                    <View style={styles.heroTopRow}>
-                        <View />
-                        <TouchableOpacity style={styles.settingsButton} onPress={handleLogout} activeOpacity={0.82}>
-                            <Image source={{ uri: assets.settings }} style={styles.settingsIcon} />
-                        </TouchableOpacity>
-                    </View>
                 </ImageBackground>
 
                 <View style={styles.avatarWrapper}>
@@ -151,9 +144,14 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                 </View>
             </View>
 
-            <View style={styles.userInfo}>
-                <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
-                <Text style={styles.subtitle}>{formatDate()}</Text>
+            <View style={styles.userInfoRow}>
+                <View style={styles.userInfo}>
+                    <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
+                    <Text style={styles.subtitle}>{formatDate()}</Text>
+                </View>
+                <TouchableOpacity style={styles.settingsButton} onPress={handleLogout} activeOpacity={0.82}>
+                    <Image source={{ uri: assets.settings }} style={styles.settingsIcon} />
+                </TouchableOpacity>
             </View>
 
             <Section title="MES COMMANDES" underlineWidth={180}>
@@ -211,6 +209,7 @@ const styles = StyleSheet.create({
     },
     content: {
         paddingBottom: 120,
+        flexGrow: 1,
     },
     heroWrapper: {
         position: 'relative',
@@ -226,19 +225,10 @@ const styles = StyleSheet.create({
     heroGradient: {
         ...StyleSheet.absoluteFillObject,
     },
-    heroTopRow: {
-        position: 'absolute',
-        right: 18,
-        top: 18,
-        left: 18,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
     settingsButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 41,
+        height: 41,
+        borderRadius: 20.5,
         borderWidth: 2,
         borderColor: '#1e1e1e',
         alignItems: 'center',
@@ -246,8 +236,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
     },
     settingsIcon: {
-        width: 22,
-        height: 22,
+        width: 25,
+        height: 25,
         tintColor: '#1e1e1e',
     },
     avatarWrapper: {
@@ -283,22 +273,30 @@ const styles = StyleSheet.create({
         height: 86,
         borderRadius: 43,
     },
-    userInfo: {
+    userInfoRow: {
         marginTop: 68,
-        alignItems: 'center',
         paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+    },
+    userInfo: {
+        flex: 1,
         gap: 6,
     },
     pseudo: {
         fontFamily: FONTS.bodyBold,
-        fontSize: 18,
+        fontSize: 16,
         color: '#1e1e1e',
+        letterSpacing: 0.8,
     },
     subtitle: {
-        fontFamily: FONTS.body,
+        fontFamily: FONTS.bodyBold,
         fontSize: 12,
         color: '#1e1e1e',
-        letterSpacing: 0.2,
+        letterSpacing: 0.6,
+        textAlign: 'center',
     },
     section: {
         paddingHorizontal: 20,
@@ -311,27 +309,24 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontFamily: FONTS.title,
         fontSize: 24,
-        letterSpacing: 1,
+        letterSpacing: 0,
+        lineHeight: 24,
         color: COLORS.primaryBlue,
+        textTransform: 'uppercase',
     },
     sectionUnderline: {
-        height: 6,
-        borderRadius: 10,
+        height: 9,
+        borderRadius: 33,
         backgroundColor: COLORS.accentYellow,
-        marginTop: -2,
+        marginTop: 20,
     },
     statCard: {
         borderWidth: 2,
         borderColor: '#130077',
-        borderRadius: 8,
-        paddingVertical: 14,
-        paddingHorizontal: 12,
+        borderRadius: 5,
+        paddingVertical: 15,
+        paddingHorizontal: 13,
         backgroundColor: '#ffffff',
-        shadowColor: '#130077',
-        shadowOpacity: 0.12,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 2,
     },
     statText: {
         fontFamily: FONTS.bodyBold,
