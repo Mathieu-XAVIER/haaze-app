@@ -18,7 +18,8 @@
       "mcp__plugin_playwright_playwright__browser_run_code",
       "Bash(npm start:*)",
       "Bash(taskkill:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(node:*)"
     ]
   }
 }

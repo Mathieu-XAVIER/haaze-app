@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { getUser, getOrderClothes, linkClothing, linkOrderClothes, User, Order, Clothing } from '../services/api';
+import { getUser, getUnlinkedClothes, scanNfcForOrder, User, Order, Clothing } from '../services/api';
 import { COLORS, FONTS } from '../styles/theme';
 
 let NfcManager: any = null;
@@ -71,16 +71,13 @@ export default function AddClothingScreen() {
         setSelectedOrder(order);
         setSelectedClothing(null);
         try {
-            const currentUser = userData || user;
-            
-            try {
-                await linkOrderClothes(order.id);
-            } catch (linkError) {
-                console.log('[AddClothingScreen] Link order clothes:', linkError);
-            }
-            
-            const orderClothes = await getOrderClothes(order.numero_commande);
-            setClothes(orderClothes);
+            const unlinkedItems = await getUnlinkedClothes(order.id);
+            const mappedClothes = unlinkedItems.map(item => ({
+                id: item.clothing.id,
+                name: item.clothing.name,
+                numero_commande: order.numero_commande,
+            }));
+            setClothes(mappedClothes);
         } catch (error) {
             console.error('[AddClothingScreen] Erreur lors du chargement des vêtements:', error);
             Alert.alert('Erreur', 'Impossible de charger les vêtements de cette commande');
@@ -138,20 +135,25 @@ export default function AddClothingScreen() {
                         onPress: async () => {
                             try {
                                 setScanning(true);
-                                await linkClothing(selectedClothing.id, `NFC-DEV-${Date.now()}`);
-                                Alert.alert(
-                                    'Succès',
-                                    'Vêtement lié avec succès (simulation) !',
-                                    [
-                                        {
-                                            text: 'OK',
-                                            onPress: async () => {
-                                                await loadData();
-                                                navigation.goBack();
+                                const nfcId = `NFC-DEV-${Date.now()}`;
+                                const result = await scanNfcForOrder(selectedOrder!.id, selectedClothing.id, nfcId);
+                                if (result.success) {
+                                    Alert.alert(
+                                        'Succès',
+                                        'Vêtement lié avec succès (simulation) !',
+                                        [
+                                            {
+                                                text: 'OK',
+                                                onPress: async () => {
+                                                    await loadData();
+                                                    navigation.goBack();
+                                                },
                                             },
-                                        },
-                                    ]
-                                );
+                                        ]
+                                    );
+                                } else {
+                                    Alert.alert('Erreur', result.message);
+                                }
                             } catch (err) {
                                 Alert.alert('Erreur', 'Impossible de lier le vêtement');
                             } finally {
@@ -199,23 +201,29 @@ export default function AddClothingScreen() {
                                     nfcId = nfcId.map((b: number) => b.toString(16).padStart(2, '0')).join(':');
                                 }
                                 
-                                linkClothing(selectedClothing.id, nfcId)
-                                    .then(() => {
-                                        cleanup();
-                                        Alert.alert(
-                                            'Succès',
-                                            'Vêtement lié avec succès !',
-                                            [
-                                                {
-                                                    text: 'OK',
-                                        onPress: async () => {
-                                            await loadData();
-                                            navigation.goBack();
-                                            resolve();
-                                        },
-                                                },
-                                            ]
-                                        );
+                                scanNfcForOrder(selectedOrder!.id, selectedClothing.id, nfcId)
+                                    .then((result) => {
+                                        if (result.success) {
+                                            cleanup();
+                                            Alert.alert(
+                                                'Succès',
+                                                'Vêtement lié avec succès !',
+                                                [
+                                                    {
+                                                        text: 'OK',
+                                                        onPress: async () => {
+                                                            await loadData();
+                                                            navigation.goBack();
+                                                            resolve();
+                                                        },
+                                                    },
+                                                ]
+                                            );
+                                        } else {
+                                            cleanup();
+                                            Alert.alert('Erreur', result.message);
+                                            reject(new Error(result.message));
+                                        }
                                     })
                                     .catch((err) => {
                                         cleanup();
@@ -271,21 +279,25 @@ export default function AddClothingScreen() {
                 return;
             }
 
-            await linkClothing(selectedClothing.id, nfcId);
+            const linkResult = await scanNfcForOrder(selectedOrder!.id, selectedClothing.id, nfcId);
 
-            Alert.alert(
-                'Succès',
-                'Vêtement lié avec succès !',
-                [
-                    {
-                        text: 'OK',
-                        onPress: async () => {
-                            await loadData();
-                            navigation.goBack();
+            if (linkResult.success) {
+                Alert.alert(
+                    'Succès',
+                    'Vêtement lié avec succès !',
+                    [
+                        {
+                            text: 'OK',
+                            onPress: async () => {
+                                await loadData();
+                                navigation.goBack();
+                            },
                         },
-                    },
-                ]
-            );
+                    ]
+                );
+            } else {
+                Alert.alert('Erreur', linkResult.message);
+            }
         } catch (error: any) {
             console.error('[AddClothingScreen] Erreur lors du scan NFC:', error);
             
@@ -309,20 +321,25 @@ export default function AddClothingScreen() {
                         text: 'Simuler',
                         onPress: async () => {
                             try {
-                                await linkClothing(selectedClothing.id, `NFC-DEV-${Date.now()}`);
-                                Alert.alert(
-                                    'Succès',
-                                    'Vêtement lié avec succès (simulation) !',
-                                    [
-                                        {
-                                            text: 'OK',
-                                            onPress: async () => {
-                                                await loadData();
-                                                navigation.goBack();
+                                const nfcId = `NFC-DEV-${Date.now()}`;
+                                const result = await scanNfcForOrder(selectedOrder!.id, selectedClothing.id, nfcId);
+                                if (result.success) {
+                                    Alert.alert(
+                                        'Succès',
+                                        'Vêtement lié avec succès (simulation) !',
+                                        [
+                                            {
+                                                text: 'OK',
+                                                onPress: async () => {
+                                                    await loadData();
+                                                    navigation.goBack();
+                                                },
                                             },
-                                        },
-                                    ]
-                                );
+                                        ]
+                                    );
+                                } else {
+                                    Alert.alert('Erreur', result.message);
+                                }
                             } catch (err) {
                                 Alert.alert('Erreur', 'Impossible de lier le vêtement');
                             } finally {

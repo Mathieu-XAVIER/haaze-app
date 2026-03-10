@@ -163,6 +163,7 @@ export async function getUser(): Promise<User> {
                     nfcId: nfcId,
                     numeroCommande: userClothing?.order_number || vetement.numero_commande || vetement.numeroCommande || clothing?.order_number || vetement.order_number || '',
                     image: imageUrl || undefined,
+                    lensUrl: clothing?.lens_url || undefined,
                 };
                 
                 return mappedVetement;
@@ -286,10 +287,12 @@ export interface Vetement {
     nfcId: string;
     numeroCommande: string;
     image?: string;
+    lensUrl?: string;
 }
 
 export interface Mission {
     id: number;
+    clothing_id?: number;
     title: string;
     name?: string;
     description?: string;
@@ -396,6 +399,7 @@ export async function getMissions(): Promise<Mission[]> {
         if (Array.isArray(data)) {
             return data.map((mission: RawMission) => ({
                 id: mission.id,
+                clothing_id: mission.clothing_id,
                 title: mission.title || mission.name || '',
                 description: mission.description,
                 progress: mission.progress || mission.current_progress || 0,
@@ -478,6 +482,7 @@ export async function getClothes(): Promise<Vetement[]> {
                 nfcId: clothing.nfc_id || clothing.nfcId || clothing.nfc_tag?.uid || '',
                 numeroCommande: clothing.numero_commande || clothing.numeroCommande || clothing.order_number || '',
                 image: imageUrl || undefined,
+                lensUrl: clothing.lens_url || undefined,
             };
         }) : [];
     } catch (error) {
@@ -541,6 +546,7 @@ export async function checkNfc(nfcId: string): Promise<Vetement | null> {
             nfcId: userClothing.nfc_id || userClothing.nfcId || userClothing.nfc_code || nfcId,
             numeroCommande: userClothing.order_number || userClothing.numero_commande || userClothing.numeroCommande || clothing?.order_number || '',
             image: imageUrl || undefined,
+            lensUrl: clothing?.lens_url || undefined,
         };
     } catch (error) {
         return null;

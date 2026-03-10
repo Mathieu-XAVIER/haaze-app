@@ -42,6 +42,7 @@ export interface RawClothing {
     numeroCommande?: string;
     order_number?: string;
     clothing_id?: number;
+    lens_url?: string;
     brand?: RawBrand;
     collection?: RawCollection;
 }
@@ -113,6 +114,7 @@ export interface RawUser {
 
 export interface RawMission {
     id: number;
+    clothing_id?: number;
     title?: string;
     name?: string;
     description?: string;

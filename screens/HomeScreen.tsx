@@ -11,6 +11,7 @@ import {
     Platform,
     ActivityIndicator,
     useWindowDimensions,
+    Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SvgUri } from 'react-native-svg';
@@ -246,6 +247,11 @@ export default function HomeScreen() {
                 <View style={styles.buttonRow}>
                     <BorderButton hero>Tester le skin</BorderButton>
                     <BorderButton hero variant="dark">Voir tous les skins</BorderButton>
+                    {user?.vetements?.[0]?.lensUrl && (
+                        <BorderButton hero onPress={() => Linking.openURL(user!.vetements![0].lensUrl!)}>
+                            Filtre Snapchat
+                        </BorderButton>
+                    )}
                 </View>
             </LinearGradient>
 

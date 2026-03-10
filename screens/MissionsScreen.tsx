@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Platform, ActivityIndicator, useWindowDimensions, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { COLORS, FONTS } from '../styles/theme';
@@ -115,10 +115,12 @@ export default function MissionsScreen() {
 
     const getFilteredMissions = (): Mission[] => {
         if (!selectedVetement) return missions;
-        return missions.filter(mission => {
-            const missionVetementId = (mission as any).vetement_id || (mission as any).clothing_id;
-            return missionVetementId === selectedVetement.id;
+        const clothingMissions = missions.filter(mission => {
+            const missionClothingId = mission.clothing_id;
+            if (!missionClothingId) return false;
+            return missionClothingId === (selectedVetement.clothingId ?? selectedVetement.id);
         });
+        return clothingMissions.length > 0 ? clothingMissions : missions;
     };
 
     if (loading) {
@@ -231,6 +233,15 @@ export default function MissionsScreen() {
                                         <TouchableOpacity activeOpacity={0.8} style={styles.heroButtonDark}>
                                             <Text style={styles.heroButtonTextDark}>Voir tous les skins</Text>
                                         </TouchableOpacity>
+                                        {selectedVetement?.lensUrl && (
+                                            <TouchableOpacity
+                                                activeOpacity={0.8}
+                                                style={styles.heroButtonDark}
+                                                onPress={() => Linking.openURL(selectedVetement.lensUrl!)}
+                                            >
+                                                <Text style={styles.heroButtonTextDark}>Filtre Snapchat</Text>
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
                                 </View>
                             </View>
