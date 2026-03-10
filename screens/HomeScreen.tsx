@@ -245,13 +245,8 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.buttonRow}>
-                    <BorderButton hero>Tester le skin</BorderButton>
+                    <BorderButton hero onPress={user?.vetements?.[0]?.lensUrl ? () => Linking.openURL(user!.vetements![0].lensUrl!) : undefined}>Tester le skin</BorderButton>
                     <BorderButton hero variant="dark">Voir tous les skins</BorderButton>
-                    {user?.vetements?.[0]?.lensUrl && (
-                        <BorderButton hero onPress={() => Linking.openURL(user!.vetements![0].lensUrl!)}>
-                            Filtre Snapchat
-                        </BorderButton>
-                    )}
                 </View>
             </LinearGradient>
 

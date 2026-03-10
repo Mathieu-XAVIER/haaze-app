@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Image, ImageBackground, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform } from 'react-native';
+import { Image, ImageBackground, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -31,6 +31,7 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     const [user, setUser] = useState<User | null>(null);
     const [stats, setStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [settingsVisible, setSettingsVisible] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -69,6 +70,7 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
     };
 
     const handleLogout = async () => {
+        setSettingsVisible(false);
         await logout();
         onLogout();
     };
@@ -122,7 +124,7 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
         <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
             <View style={styles.heroWrapper}>
                 <ImageBackground
-                    source={{ uri: assets.background }}
+                    source={require('../assets/profile-banner.png')}
                     style={styles.hero}
                     imageStyle={styles.heroImage}
                     resizeMode="cover"
@@ -138,7 +140,7 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                 <View style={styles.avatarWrapper}>
                     <View style={styles.avatarOuterRing}>
                         <View style={styles.avatarInnerRing}>
-                            <Image source={{ uri: assets.avatar }} style={styles.avatar} />
+                            <Image source={require('../assets/profile-pdp.png')} style={styles.avatar} />
                         </View>
                     </View>
                 </View>
@@ -149,8 +151,8 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                     <Text style={styles.pseudo}>{user?.name || 'Je suis le pseudo'}</Text>
                     <Text style={styles.subtitle}>{formatDate()}</Text>
                 </View>
-                <TouchableOpacity style={styles.settingsButton} onPress={handleLogout} activeOpacity={0.82}>
-                    <Image source={{ uri: assets.settings }} style={styles.settingsIcon} />
+                <TouchableOpacity style={styles.settingsButton} onPress={() => setSettingsVisible(true)} activeOpacity={0.82}>
+                    <Ionicons name="settings-outline" size={20} color="#1e1e1e" />
                 </TouchableOpacity>
             </View>
 
@@ -188,6 +190,23 @@ export default function ProfileScreen({ onLogout }: { onLogout: () => void }) {
                     <Image source={{ uri: assets.badgeDiamond }} style={styles.badgeImage} resizeMode="contain" />
                 </View>
             </Section>
+
+            <Modal visible={settingsVisible} transparent animationType="fade" onRequestClose={() => setSettingsVisible(false)}>
+                <Pressable style={styles.modalOverlay} onPress={() => setSettingsVisible(false)}>
+                    <Pressable style={styles.modalSheet} onPress={() => {}}>
+                        <Text style={styles.modalTitle}>Paramètres</Text>
+                        <TouchableOpacity style={styles.modalOption} activeOpacity={0.75}>
+                            <Ionicons name="person-outline" size={20} color={COLORS.primaryBlue} />
+                            <Text style={styles.modalOptionText}>Modifier le profil</Text>
+                        </TouchableOpacity>
+                        <View style={styles.modalSeparator} />
+                        <TouchableOpacity style={styles.modalOption} activeOpacity={0.75} onPress={handleLogout}>
+                            <Ionicons name="log-out-outline" size={20} color="#e03e3e" />
+                            <Text style={[styles.modalOptionText, styles.modalOptionDanger]}>Déconnexion</Text>
+                        </TouchableOpacity>
+                    </Pressable>
+                </Pressable>
+            </Modal>
         </ScrollView>
     );
 }
@@ -234,11 +253,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#ffffff',
-    },
-    settingsIcon: {
-        width: 25,
-        height: 25,
-        tintColor: '#1e1e1e',
     },
     avatarWrapper: {
         position: 'absolute',
@@ -292,11 +306,11 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
     },
     subtitle: {
-        fontFamily: FONTS.bodyBold,
+        fontFamily: FONTS.body,
         fontSize: 12,
         color: '#1e1e1e',
         letterSpacing: 0.6,
-        textAlign: 'center',
+        textAlign: 'left',
     },
     section: {
         paddingHorizontal: 20,
@@ -395,5 +409,57 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: FONTS.body,
         color: '#666',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalSheet: {
+        width: 280,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 0,
+        ...Platform.select({
+            web: { boxShadow: '0px 8px 24px rgba(0,0,0,0.15)' },
+            default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.15,
+                shadowRadius: 24,
+                elevation: 10,
+            },
+        }),
+    },
+    modalTitle: {
+        fontFamily: FONTS.bodyBold,
+        fontSize: 13,
+        color: '#999',
+        letterSpacing: 0.6,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        textTransform: 'uppercase',
+    },
+    modalOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+    },
+    modalOptionText: {
+        fontFamily: FONTS.bodyBold,
+        fontSize: 15,
+        color: COLORS.textDark,
+    },
+    modalOptionDanger: {
+        color: '#e03e3e',
+    },
+    modalSeparator: {
+        height: 1,
+        backgroundColor: '#f0f0f0',
+        marginHorizontal: 20,
     },
 });

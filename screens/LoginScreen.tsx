@@ -79,7 +79,7 @@ export default function LoginScreen() {
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
             <ScrollView bounces={false} contentContainerStyle={styles.flex}>
-                <ImageBackground source={{ uri: assets.background }} style={styles.background} resizeMode="cover">
+                <ImageBackground source={require('../assets/login-banner.png')} style={styles.background} resizeMode="cover">
                     <Image source={{ uri: assets.overlay }} style={styles.overlayImage} resizeMode="cover" />
                     <LinearGradient
                         colors={['rgba(255,255,255,0.04)', 'rgba(255,255,255,0.32)', 'rgba(255,255,255,0.78)']}

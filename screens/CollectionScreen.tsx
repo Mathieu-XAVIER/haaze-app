@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ImageBackground, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getUser, getCollections, Vetement, User, Collection } from '../services/api';
@@ -104,14 +104,18 @@ export default function CollectionScreen() {
     }
 
     return (
-        <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Header avec gradient */}
+        <View style={styles.screen}>
             <LinearGradient
-                colors={['#CFCEFB', 'rgba(255, 255, 255, 0)']}
+                colors={['#CFCEFB', '#f5f4ff', COLORS.backgroundLight]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.heroSection}
-            >
+                locations={[0, 0.4, 1]}
+                style={StyleSheet.absoluteFillObject}
+                pointerEvents="none"
+            />
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.heroSection}>
                 <View style={styles.heroHeader}>
                     <Image
                         source={require('../assets/logo.png')}
@@ -120,7 +124,7 @@ export default function CollectionScreen() {
                     />
                     <Text style={styles.heroTitle}>{user?.name || 'Je suis le pseudo'}</Text>
                 </View>
-            </LinearGradient>
+            </View>
 
             {/* Section MES VÊTEMENTS */}
             <Section title="MES VÊTEMENTS" underlineWidth={258}>
@@ -140,9 +144,7 @@ export default function CollectionScreen() {
                                     source={vetement.image}
                                     style={styles.vetementImageBg}
                                     imageStyle={styles.vetementImage}
-                                >
-                                    <View style={styles.vetementOverlay} />
-                                </ImageBackground>
+                                />
                             )}
                         </View>
                     ))}
@@ -205,6 +207,7 @@ export default function CollectionScreen() {
                 </View>
             </Section>
         </ScrollView>
+        </View>
     );
 }
 
@@ -216,7 +219,9 @@ const CollectionCard = ({ collection }: { collection: Collection & { image?: any
             imageStyle={styles.collectionCardImage}
         >
             <View style={styles.collectionOverlay} />
-            <Text style={styles.collectionTitle}>{collection.title}</Text>
+            <View style={styles.collectionTitleWrapper}>
+                <Text style={styles.collectionTitle}>{collection.title}</Text>
+            </View>
         </ImageBackground>
     </TouchableOpacity>
 );
@@ -229,7 +234,9 @@ const ComingCollectionCard = ({ collection }: { collection: Collection & { image
             imageStyle={styles.comingImage}
         >
             <View style={styles.comingOverlay} />
-            <Text style={styles.comingTitle}>{collection.title}</Text>
+            <View style={styles.collectionTitleWrapper}>
+                <Text style={styles.comingTitle}>{collection.title}</Text>
+            </View>
         </ImageBackground>
     </TouchableOpacity>
 );
@@ -249,7 +256,7 @@ const Section = ({ title, children, underlineWidth = 258 }: { title: string; chi
 const styles = StyleSheet.create({
     screen: {
         flex: 1,
-        backgroundColor: '#F8F8F8',
+        backgroundColor: COLORS.backgroundLight,
     },
     loadingContainer: {
         justifyContent: 'center',
@@ -310,13 +317,13 @@ const styles = StyleSheet.create({
         height: 9,
         borderRadius: 33,
         backgroundColor: COLORS.accentYellow,
-        marginTop: 20,
+        marginTop: 6,
     },
     vetementsGrid: {
         flexDirection: 'row',
         gap: 15,
         flexWrap: 'wrap',
-        marginTop: 48,
+        marginTop: 16,
     },
     vetementCard: {
         width: '47%',
@@ -332,11 +339,14 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     vetementImage: {
-        resizeMode: 'cover',
-    },
-    vetementOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.25)',
+        resizeMode: 'contain',
+        margin: 12,
+        width: undefined,
+        height: undefined,
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
     },
     addCard: {
         width: '100%',
@@ -353,7 +363,7 @@ const styles = StyleSheet.create({
     collectionsGrid: {
         flexDirection: 'row',
         gap: 10,
-        marginTop: 48,
+        marginTop: 16,
     },
     collectionCard: {
         flex: 1,
@@ -364,6 +374,8 @@ const styles = StyleSheet.create({
     collectionCardBg: {
         width: '100%',
         height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     collectionCardImage: {
         resizeMode: 'cover',
@@ -372,24 +384,25 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
+    collectionTitleWrapper: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1,
+        paddingHorizontal: 8,
+    },
     collectionTitle: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         color: '#fff',
         fontSize: 24,
         fontFamily: FONTS.title,
         textAlign: 'center',
-        paddingBottom: 20,
-        paddingTop: 20,
         textTransform: 'uppercase',
         lineHeight: 28,
     },
     comingGrid: {
         flexDirection: 'row',
         gap: 10,
-        marginTop: 49,
+        marginTop: 16,
     },
     comingCard: {
         flex: 1,
@@ -400,6 +413,8 @@ const styles = StyleSheet.create({
     comingCardBg: {
         width: '100%',
         height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     comingImage: {
         resizeMode: 'cover',
@@ -409,16 +424,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     comingTitle: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         color: '#fff',
         fontSize: 24,
         fontFamily: FONTS.title,
         textAlign: 'center',
-        paddingBottom: 20,
-        paddingTop: 20,
         textTransform: 'uppercase',
         lineHeight: 28,
     },
